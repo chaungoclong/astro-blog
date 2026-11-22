@@ -1,9 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateWebsiteSchema, generateBlogPostingSchema, generateBreadcrumbSchema } from '../src/lib/seo.ts';
+import {
+  generateWebsiteSchema,
+  generateBlogPostingSchema,
+  generateBreadcrumbSchema,
+} from '../src/lib/seo.ts';
 
 test('SEO: generateWebsiteSchema should produce valid Schema.org JSON-LD', () => {
-  const jsonStr = generateWebsiteSchema('My Tech Blog', 'Chia sẻ kiến thức công nghệ', 'https://example.com');
+  const jsonStr = generateWebsiteSchema(
+    'My Tech Blog',
+    'Chia sẻ kiến thức công nghệ',
+    'https://example.com'
+  );
   const parsed = JSON.parse(jsonStr);
 
   assert.equal(parsed['@context'], 'https://schema.org');

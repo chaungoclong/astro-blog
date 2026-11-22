@@ -1,19 +1,81 @@
 ---
-import { dbService } from '../lib/db';
+import { menuService, pageService, settingService } from '../api';
 import MenuTree from './MenuTree.astro';
-const settings = dbService.getSettings();
-const pages = dbService.getPages('published').filter((page) => Boolean(page.show_in_nav));
-const menuItems = dbService.getMenuItems(true);
+const settings = await settingService.getSettings();
+const pages = (await pageService.getPages('published')).filter((page) => Boolean(page.show_in_nav));
+const menuItems = await menuService.getMenuItems(true);
 const currentPath = Astro.url.pathname;
 ---
+
 <header class="public-header">
   <div class="public-header-inner">
-    <a href="/" class="public-brand" aria-label="Trang chủ"><span class="public-brand-mark" aria-hidden="true">TL</span><span><b>{settings.site_title || 'Astro TechLog'}</b><small>Notes on code & craft</small></span></a>
+    <a href="/" class="public-brand" aria-label="Trang chủ">
+      <span class="public-brand-mark" aria-hidden="true">
+        TL
+      </span>
+      <span>
+        <b>{settings.site_title || 'Astro TechLog'}</b>
+        <small>Notes on code & craft</small>
+      </span>
+    </a>
     <nav aria-label="Điều hướng chính" class="public-nav">
-      {menuItems.length > 0 ? <MenuTree items={menuItems} currentPath={currentPath} /> : <><a href="/" aria-current={currentPath === '/' ? 'page' : undefined}>Bài viết</a>{pages.map((page) => <a href={`/${page.slug}`} aria-current={currentPath === `/${page.slug}` ? 'page' : undefined}>{page.title}</a>)}<a href="/about" aria-current={currentPath === '/about' ? 'page' : undefined}>Giới thiệu</a></>}
+      {menuItems.length > 0 ? (
+        <MenuTree items={menuItems} currentPath={currentPath} />
+      ) : (
+        <>
+          <a href="/" aria-current={currentPath === '/' ? 'page' : undefined}>
+            Bài viết
+          </a>
+          {pages.map((page) => (
+            <a
+              href={`/${page.slug}`}
+              aria-current={currentPath === `/${page.slug}` ? 'page' : undefined}
+            >
+              {page.title}
+            </a>
+          ))}
+          <a href="/about" aria-current={currentPath === '/about' ? 'page' : undefined}>
+            Giới thiệu
+          </a>
+        </>
+      )}
     </nav>
-    <div class="public-header-actions"><a href="/search" class="public-search">Tìm kiếm</a><button id="public-mobile-btn" type="button" class="public-menu-button" aria-label="Mở menu" aria-expanded="false">Menu</button></div>
+    <div class="public-header-actions">
+      <a href="/search" class="public-search">
+        Tìm kiếm
+      </a>
+      <button
+        id="public-mobile-btn"
+        type="button"
+        class="public-menu-button"
+        aria-label="Mở menu"
+        aria-expanded="false"
+      >
+        Menu
+      </button>
+    </div>
   </div>
-  <div id="public-mobile-menu" class="public-mobile-menu" hidden>{menuItems.length > 0 ? <MenuTree items={menuItems} currentPath={currentPath} mobile /> : <><a href="/">Bài viết</a>{pages.map((page) => <a href={`/${page.slug}`}>{page.title}</a>)}<a href="/about">Giới thiệu</a><a href="/search">Tìm kiếm</a></>}</div>
-  <script>const button=document.getElementById('public-mobile-btn');const menu=document.getElementById('public-mobile-menu');button?.addEventListener('click',()=>{const open=menu?.hasAttribute('hidden')??true;menu?.toggleAttribute('hidden',!open);button.setAttribute('aria-expanded',String(open));});</script>
+  <div id="public-mobile-menu" class="public-mobile-menu" hidden>
+    {menuItems.length > 0 ? (
+      <MenuTree items={menuItems} currentPath={currentPath} mobile />
+    ) : (
+      <>
+        <a href="/">Bài viết</a>
+        {pages.map((page) => (
+          <a href={`/${page.slug}`}>{page.title}</a>
+        ))}
+        <a href="/about">Giới thiệu</a>
+        <a href="/search">Tìm kiếm</a>
+      </>
+    )}
+  </div>
+  <script>
+    const button = document.getElementById('public-mobile-btn');
+    const menu = document.getElementById('public-mobile-menu');
+    button?.addEventListener('click', () => {
+      const open = menu?.hasAttribute('hidden') ?? true;
+      menu?.toggleAttribute('hidden', !open);
+      button.setAttribute('aria-expanded', String(open));
+    });
+  </script>
 </header>

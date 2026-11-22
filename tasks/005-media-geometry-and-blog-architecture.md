@@ -34,12 +34,12 @@ The first published post is featured and should not be repeated in the latest fe
 
 ## Test report
 
-| Check | Status | Evidence / reason |
-| --- | --- | --- |
-| UI regression | PASS | `node --test test/retro-ui.test.js`; homepage hierarchy and scoped Media radius are asserted. |
-| Build | PASS | `pnpm build`. |
-| Full suite | FAIL | 12/13 test files passed; existing access-control fixture still expects the absent persisted “Chuyên mục” menu root. |
-| Runtime smoke | NOT RUN | Astro initialized but sandbox denied `127.0.0.1:4321` with `EPERM`. |
+| Check         | Status  | Evidence / reason                                                                                                   |
+| ------------- | ------- | ------------------------------------------------------------------------------------------------------------------- |
+| UI regression | PASS    | `node --test test/retro-ui.test.js`; homepage hierarchy and scoped Media radius are asserted.                       |
+| Build         | PASS    | `pnpm build`.                                                                                                       |
+| Full suite    | FAIL    | 12/13 test files passed; existing access-control fixture still expects the absent persisted “Chuyên mục” menu root. |
+| Runtime smoke | NOT RUN | Astro initialized but sandbox denied `127.0.0.1:4321` with `EPERM`.                                                 |
 
 ## Blockers
 

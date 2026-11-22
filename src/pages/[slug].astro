@@ -1,13 +1,13 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { dbService } from '../lib/db';
-import { isAuthenticated } from '../lib/auth';
+import { pageService } from '../api';
+import { isAuthenticated } from '../api/modules/auth/auth.service';
 import { renderMarkdown } from '../lib/utils';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 
 const { slug } = Astro.params;
-const page = slug ? dbService.getPageBySlug(slug) : undefined;
-const isAdmin = isAuthenticated(Astro.cookies);
+const page = slug ? await pageService.getPageBySlug(slug) : undefined;
+const isAdmin = await isAuthenticated(Astro.cookies);
 if (!page || (page.status !== 'published' && !isAdmin)) return Astro.redirect('/');
 ---
 
@@ -17,8 +17,18 @@ if (!page || (page.status !== 'published' && !isAdmin)) return Astro.redirect('/
     <div class="editorial-kicker">Thông tin</div>
     <h1 class="editorial-title max-w-4xl">{page.title}</h1>
     {page.excerpt && <p class="editorial-deck max-w-2xl">{page.excerpt}</p>}
-    {page.status === 'draft' && <p class="mt-6 inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">Bản nháp — chỉ quản trị viên xem được</p>}
-    <div class="prose-content editorial-prose mt-12"><Fragment set:html={renderMarkdown(page.content)} /></div>
-    {isAdmin && <a class="editorial-admin-link" href={`/admin/pages/${page.id}/edit`}>Chỉnh sửa trang →</a>}
+    {page.status === 'draft' && (
+      <p class="mt-6 inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+        Bản nháp — chỉ quản trị viên xem được
+      </p>
+    )}
+    <div class="prose-content editorial-prose mt-12">
+      <Fragment set:html={renderMarkdown(page.content)} />
+    </div>
+    {isAdmin && (
+      <a class="editorial-admin-link" href={`/admin/pages/${page.id}/edit`}>
+        Chỉnh sửa trang →
+      </a>
+    )}
   </article>
 </BaseLayout>

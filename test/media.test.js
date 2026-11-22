@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MAX_IMAGE_SIZE, MAX_MEDIA_SIZE, normalizeOriginalMediaName, safeMediaFilename, validateMediaBuffer } from '../src/lib/media.ts';
+import {
+  MAX_IMAGE_SIZE,
+  MAX_MEDIA_SIZE,
+  normalizeOriginalMediaName,
+  safeMediaFilename,
+  validateMediaBuffer,
+} from '../src/api/modules/media/media-storage.repository.ts';
 
 const PNG_TYPE = 'image/png';
 const TEXT_TYPE = 'text/plain';

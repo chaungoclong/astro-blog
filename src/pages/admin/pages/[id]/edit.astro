@@ -1,8 +1,11 @@
 ---
 import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import PageEditor from '../../../../components/PageEditor.astro';
-import { dbService } from '../../../../lib/db';
-const page = dbService.getPageById(Number(Astro.params.id));
+import { pageService } from '../../../../api';
+const page = await pageService.getPageById(Number(Astro.params.id));
 if (!page) return Astro.redirect('/admin/pages');
 ---
-<AdminLayout title={`Sửa: ${page.title}`} activeNav="pages"><PageEditor page={page} /></AdminLayout>
+
+<AdminLayout title={`Sửa: ${page.title}`} activeNav="pages">
+  <PageEditor page={page} />
+</AdminLayout>

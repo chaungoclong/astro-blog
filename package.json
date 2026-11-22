@@ -6,17 +6,34 @@
     "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev --host",
     "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
-    "test": "node --test test/**/*.test.js",
+    "db:migrate": "node src/api/db/migrate.ts",
+    "db:migrate:schema": "node src/api/db/migrate.ts --no-seed",
+    "typecheck": "ASTRO_TELEMETRY_DISABLED=1 astro check && tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node src/api/db/migrate.ts && node --test test/**/*.test.js",
     "astro": "ASTRO_TELEMETRY_DISABLED=1 astro"
   },
   "dependencies": {
     "@astrojs/node": "^9.5.5",
     "@tailwindcss/vite": "^4.3.5",
     "astro": "^5.18.2",
+    "hono": "^4.13.19",
+    "kysely": "^0.29.9",
     "marked": "^18.2.1",
     "tailwindcss": "^4.3.5"
   },
   "devDependencies": {
-    "@types/node": "^26.6.6"
+    "@astrojs/check": "^0.9.12",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.6",
+    "eslint": "^10.15.0",
+    "eslint-plugin-astro": "^3.2.1",
+    "prettier": "^3.10.1",
+    "prettier-plugin-astro": "^1.1.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.73.0"
   }
 }

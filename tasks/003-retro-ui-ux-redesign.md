@@ -67,13 +67,13 @@ Reference review: freek.dev emphasizes a simple navigation hierarchy, high conte
 
 ## Test report
 
-| Check | Status | Evidence / reason |
-| --- | --- | --- |
-| Reference review | PASS | Reviewed current freek.dev navigation/content structure on 2026-11-22; no code/assets copied. |
-| UI regression | PASS | `node --test test/retro-ui.test.js` — 3 assertions groups passed. |
-| Build | PASS | `pnpm build` completed successfully. |
-| Full suite | FAIL | 12/13 test files passed. Existing `access-control.test.js` expects a persisted “Chuyên mục” menu root that is absent from the current user database; no sample data was modified. |
-| Runtime smoke | NOT RUN | Astro generated types/content, then sandbox denied binding `127.0.0.1:4321` with `EPERM`. |
+| Check            | Status  | Evidence / reason                                                                                                                                                                 |
+| ---------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Reference review | PASS    | Reviewed current freek.dev navigation/content structure on 2026-11-22; no code/assets copied.                                                                                     |
+| UI regression    | PASS    | `node --test test/retro-ui.test.js` — 3 assertions groups passed.                                                                                                                 |
+| Build            | PASS    | `pnpm build` completed successfully.                                                                                                                                              |
+| Full suite       | FAIL    | 12/13 test files passed. Existing `access-control.test.js` expects a persisted “Chuyên mục” menu root that is absent from the current user database; no sample data was modified. |
+| Runtime smoke    | NOT RUN | Astro generated types/content, then sandbox denied binding `127.0.0.1:4321` with `EPERM`.                                                                                         |
 
 ## Blockers
 

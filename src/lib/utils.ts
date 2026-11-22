@@ -11,19 +11,19 @@ marked.setOptions({
  */
 export function slugify(text: string): string {
   if (!text) return '';
-  
+
   let str = text.toLowerCase().trim();
-  
+
   // Remove accents
   str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   str = str.replace(/[đĐ]/g, 'd');
-  
+
   // Remove special chars and spaces
   str = str
     .replace(/[^a-z0-9 -]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-');
-    
+
   return str.replace(/^-+|-+$/g, '');
 }
 

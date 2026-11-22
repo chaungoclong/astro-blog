@@ -1,36 +1,107 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { dbService } from '../../../lib/db';
+import { pageService } from '../../../api';
 import { formatDate } from '../../../lib/utils';
-const pages = dbService.getPages('all');
+const pages = await pageService.getPages('all');
 ---
+
 <AdminLayout title="Quản lý trang" activeNav="pages">
   <section class="space-y-6">
-    <div class="admin-page-heading"><div><p class="admin-eyebrow">Cấu trúc website</p><h2>Trang tĩnh</h2><p>Tạo, xuất bản và đưa các trang như Liên hệ, Chính sách lên menu.</p></div><a href="/admin/pages/new" class="admin-primary-btn">Tạo trang <span>→</span></a></div>
+    <div class="admin-page-heading">
+      <div>
+        <p class="admin-eyebrow">Cấu trúc website</p>
+        <h2>Trang tĩnh</h2>
+        <p>Tạo, xuất bản và đưa các trang như Liên hệ, Chính sách lên menu.</p>
+      </div>
+      <a href="/admin/pages/new" class="admin-primary-btn">
+        Tạo trang <span>→</span>
+      </a>
+    </div>
     <div class="admin-panel overflow-hidden">
-      <div class="overflow-x-auto"><table class="admin-table"><thead><tr><th>Trang</th><th>Đường dẫn</th><th>Trạng thái</th><th>Cập nhật</th><th><span class="sr-only">Thao tác</span></th></tr></thead><tbody>
-        {pages.map((page) => <tr><td><b>{page.title}</b>{page.excerpt && <small>{page.excerpt}</small>}</td><td><code>/{page.slug}</code></td><td><span class={`admin-status ${page.status}`}>{page.status === 'published' ? 'Đã xuất bản' : 'Bản nháp'}</span>{page.show_in_nav ? <small class="nav-marker">Trên menu</small> : null}</td><td>{formatDate(page.updated_at)}</td><td><div class="flex justify-end gap-2"><a class="admin-icon-btn" href={`/admin/pages/${page.id}/edit`} aria-label={`Sửa ${page.title}`}>Sửa</a><button class="admin-icon-btn delete-page" data-id={page.id} data-title={page.title}>Xóa</button></div></td></tr>)}
-        {pages.length === 0 && <tr><td colspan="5" class="py-14 text-center text-sm text-zinc-500">Chưa có trang nào. Hãy tạo trang đầu tiên.</td></tr>}
-      </tbody></table></div>
+      <div class="overflow-x-auto">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Trang</th>
+              <th>Đường dẫn</th>
+              <th>Trạng thái</th>
+              <th>Cập nhật</th>
+              <th>
+                <span class="sr-only">Thao tác</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {pages.map((page) => (
+              <tr>
+                <td>
+                  <b>{page.title}</b>
+                  {page.excerpt && <small>{page.excerpt}</small>}
+                </td>
+                <td>
+                  <code>/{page.slug}</code>
+                </td>
+                <td>
+                  <span class={`admin-status ${page.status}`}>
+                    {page.status === 'published' ? 'Đã xuất bản' : 'Bản nháp'}
+                  </span>
+                  {page.show_in_nav ? <small class="nav-marker">Trên menu</small> : null}
+                </td>
+                <td>{formatDate(page.updated_at)}</td>
+                <td>
+                  <div class="flex justify-end gap-2">
+                    <a
+                      class="admin-icon-btn"
+                      href={`/admin/pages/${page.id}/edit`}
+                      aria-label={`Sửa ${page.title}`}
+                    >
+                      Sửa
+                    </a>
+                    <button
+                      class="admin-icon-btn delete-page"
+                      data-id={page.id}
+                      data-title={page.title}
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {pages.length === 0 && (
+              <tr>
+                <td colspan="5" class="py-14 text-center text-sm text-zinc-500">
+                  Chưa có trang nào. Hãy tạo trang đầu tiên.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
   <script>
-    const toast = (message: string, type: 'success' | 'error' | 'info' = 'info') => (window as any).showAdminToast?.(message, type);
-    const flash = (message: string, type: 'success' | 'error' | 'info' = 'info') => (window as any).setAdminFlash?.(message, type);
-    document.querySelectorAll('.delete-page').forEach((button) => button.addEventListener('click', async () => {
-      const target = button as HTMLButtonElement;
-      if (!confirm(`Xóa trang “${target.dataset.title}”? Hành động này không thể hoàn tác.`)) return;
-      target.disabled = true;
-      try {
-        const response = await fetch(`/api/pages/${target.dataset.id}`, { method: 'DELETE' });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Không thể xóa trang.');
-        flash('Đã xóa trang thành công.', 'success');
-        window.location.reload();
-      } catch (error) {
-        toast(error instanceof Error ? error.message : 'Lỗi kết nối khi xóa trang.', 'error');
-        target.disabled = false;
-      }
-    }));
+    const toast = (message: string, type: 'success' | 'error' | 'info' = 'info') =>
+      (window as any).showAdminToast?.(message, type);
+    const flash = (message: string, type: 'success' | 'error' | 'info' = 'info') =>
+      (window as any).setAdminFlash?.(message, type);
+    document.querySelectorAll('.delete-page').forEach((button) =>
+      button.addEventListener('click', async () => {
+        const target = button as HTMLButtonElement;
+        if (!confirm(`Xóa trang “${target.dataset.title}”? Hành động này không thể hoàn tác.`))
+          return;
+        target.disabled = true;
+        try {
+          const response = await fetch(`/api/pages/${target.dataset.id}`, { method: 'DELETE' });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || 'Không thể xóa trang.');
+          flash('Đã xóa trang thành công.', 'success');
+          window.location.reload();
+        } catch (error) {
+          toast(error instanceof Error ? error.message : 'Lỗi kết nối khi xóa trang.', 'error');
+          target.disabled = false;
+        }
+      })
+    );
   </script>
 </AdminLayout>

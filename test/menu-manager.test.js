@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { dbService } from '../src/lib/db.ts';
+import { menuService } from '../src/api/index.ts';
 
 const MENU_PAGE_PATH = new URL('../src/pages/admin/menus/index.astro', import.meta.url);
 const HOME_SOURCE = "{ label: 'Trang chủ', url: '/' }";
@@ -15,19 +15,26 @@ test('Menu manager: system sources remain recoverable and descendant parents are
   assert.ok(source.includes('!excluded.has(candidate.id)'));
 });
 
-test('Menu hierarchy: rejects ancestor cycles and recursively deletes a branch', () => {
+test('Menu hierarchy: rejects ancestor cycles and recursively deletes a branch', async () => {
   const suffix = Date.now();
-  const rootId = dbService.createMenuItem(`Root ${suffix}`, `/root-${suffix}`);
-  const childId = dbService.createMenuItem(`Child ${suffix}`, `/child-${suffix}`, rootId);
-  const grandchildId = dbService.createMenuItem(`Grandchild ${suffix}`, `/grandchild-${suffix}`, childId);
+  const rootId = await menuService.createMenuItem(`Root ${suffix}`, `/root-${suffix}`);
+  const childId = await menuService.createMenuItem(`Child ${suffix}`, `/child-${suffix}`, rootId);
+  const grandchildId = await menuService.createMenuItem(
+    `Grandchild ${suffix}`,
+    `/grandchild-${suffix}`,
+    childId
+  );
   try {
-    assert.equal(dbService.updateMenuItem(rootId, { parent_id: grandchildId }), false);
-    assert.equal(dbService.deleteMenuItem(rootId), true);
-    const remaining = dbService.getMenuItems();
-    assert.equal(remaining.some((item) => [rootId, childId, grandchildId].includes(item.id)), false);
+    assert.equal(await menuService.updateMenuItem(rootId, { parent_id: grandchildId }), false);
+    assert.equal(await menuService.deleteMenuItem(rootId), true);
+    const remaining = await menuService.getMenuItems();
+    assert.equal(
+      remaining.some((item) => [rootId, childId, grandchildId].includes(item.id)),
+      false
+    );
   } finally {
-    dbService.deleteMenuItem(rootId);
-    dbService.deleteMenuItem(childId);
-    dbService.deleteMenuItem(grandchildId);
+    await menuService.deleteMenuItem(rootId);
+    await menuService.deleteMenuItem(childId);
+    await menuService.deleteMenuItem(grandchildId);
   }
 });

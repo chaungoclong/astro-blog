@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isMediaFolderWithin, isValidMediaFolderPath, joinMediaFolderPath } from '../src/lib/media-folders.ts';
+import {
+  isMediaFolderWithin,
+  isValidMediaFolderPath,
+  joinMediaFolderPath,
+} from '../src/api/modules/media/media-folder.service.ts';
 
 const ROOT_FOLDER = '';
 const PARENT_FOLDER = 'hello';

@@ -1,85 +1,101 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { dbService } from '../lib/db';
+import { settingService } from '../api';
 
-const settings = dbService.getSettings();
+const settings = await settingService.getSettings();
 ---
 
 <BaseLayout title="Giới thiệu">
-  
   <div class="public-content-rail py-12 sm:py-16">
-    
     <!-- Hero / Profile Intro -->
     <div class="border-b-2 border-zinc-950 pb-10 mb-12 flex flex-col sm:flex-row items-start sm:items-center gap-6">
       <div class="w-20 h-20 border-2 border-zinc-950 bg-[var(--brand,#0f766e)] text-white flex items-center justify-center font-black text-3xl shadow-[4px_4px_0_var(--retro-ink)] flex-shrink-0">
         {settings.author_name ? settings.author_name.charAt(0).toUpperCase() : 'A'}
       </div>
       <div>
-        <p class="font-mono text-xs font-bold text-[var(--brand-deep,#115e59)] uppercase tracking-widest mb-1.5">Tác giả & Nền tảng xuất bản</p>
-        <h1 class="text-3xl sm:text-5xl font-bold text-zinc-950 tracking-tight" style="font-family: var(--font-display);">
+        <p class="font-mono text-xs font-bold text-[var(--brand-deep,#115e59)] uppercase tracking-widest mb-1.5">
+          Tác giả & Nền tảng xuất bản
+        </p>
+        <h1
+          class="text-3xl sm:text-5xl font-bold text-zinc-950 tracking-tight"
+          style="font-family: var(--font-display);"
+        >
           Giới thiệu về {settings.site_title}
         </h1>
         <p class="text-sm sm:text-base text-zinc-600 mt-2 font-normal max-w-2xl">
-          {settings.site_subtitle || 'Nền tảng blog công nghệ hiệu năng cao xây dựng bằng Astro 5 và SQLite nhúng'}
+          {settings.site_subtitle ||
+            'Nền tảng blog công nghệ hiệu năng cao xây dựng bằng Astro 5 và SQLite nhúng'}
         </p>
       </div>
     </div>
 
     <!-- Main Content Container -->
     <div class="border-2 border-zinc-950 bg-white p-6 sm:p-10 shadow-[6px_6px_0_var(--retro-ink)] space-y-8 prose-content max-w-none">
-      
       <h2>Sứ mệnh của Blog</h2>
       <p>
-        Website được xây dựng nhằm cung cấp giải pháp xuất bản nội dung công nghệ tối giản, tinh gọn và tốc độ cao. Toàn bộ hệ thống kết hợp sức mạnh Server-Side Rendering (SSR) của <strong>Astro 5</strong> và cơ sở dữ liệu nhúng siêu tốc <strong>SQLite</strong> trong Node.js core.
+        Website được xây dựng nhằm cung cấp giải pháp xuất bản nội dung công nghệ tối giản, tinh gọn
+        và tốc độ cao. Toàn bộ hệ thống kết hợp sức mạnh Server-Side Rendering (SSR) của{' '}
+        <strong>Astro 5</strong> và cơ sở dữ liệu nhúng siêu tốc <strong>SQLite</strong> trong
+        Node.js core.
       </p>
 
       <h2>Kiến trúc hạ tầng & Kỹ thuật</h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose font-sans">
-        
         <div class="p-4 border-2 border-zinc-950 bg-[var(--retro-paper)] shadow-[3px_3px_0_var(--retro-ink)]">
           <div class="flex items-center gap-2 mb-1.5">
             <span class="w-2.5 h-2.5 border border-zinc-950 bg-blue-500"></span>
-            <h3 class="font-bold text-zinc-950 text-xs uppercase tracking-wider font-mono">Astro 5 Islands SSR</h3>
+            <h3 class="font-bold text-zinc-950 text-xs uppercase tracking-wider font-mono">
+              Astro 5 Islands SSR
+            </h3>
           </div>
           <p class="text-xs text-zinc-600 leading-relaxed">
-            Biên dịch HTML phía máy chủ với Zero-JS mặc định, tối ưu điểm Google Lighthouse và Core Web Vitals tối đa.
+            Biên dịch HTML phía máy chủ với Zero-JS mặc định, tối ưu điểm Google Lighthouse và Core
+            Web Vitals tối đa.
           </p>
         </div>
 
         <div class="p-4 border-2 border-zinc-950 bg-[var(--retro-paper)] shadow-[3px_3px_0_var(--retro-ink)]">
           <div class="flex items-center gap-2 mb-1.5">
             <span class="w-2.5 h-2.5 border border-zinc-950 bg-emerald-500"></span>
-            <h3 class="font-bold text-zinc-950 text-xs uppercase tracking-wider font-mono">Node.js Built-in SQLite</h3>
+            <h3 class="font-bold text-zinc-950 text-xs uppercase tracking-wider font-mono">
+              Node.js Built-in SQLite
+            </h3>
           </div>
           <p class="text-xs text-zinc-600 leading-relaxed">
-            Module <code class="text-[var(--brand-deep,#115e59)] font-mono text-[11px] font-bold">node:sqlite</code> nhúng trực tiếp trong core, không cần cài đặt thư viện C++ native biên dịch.
+            Module{' '}
+            <code class="text-[var(--brand-deep,#115e59)] font-mono text-[11px] font-bold">
+              node:sqlite
+            </code>{' '}
+            nhúng trực tiếp trong core, không cần cài đặt thư viện C++ native biên dịch.
           </p>
         </div>
 
         <div class="p-4 border-2 border-zinc-950 bg-[var(--retro-paper)] shadow-[3px_3px_0_var(--retro-ink)]">
           <div class="flex items-center gap-2 mb-1.5">
             <span class="w-2.5 h-2.5 border border-zinc-950 bg-indigo-500"></span>
-            <h3 class="font-bold text-zinc-950 text-xs uppercase tracking-wider font-mono">Tailwind CSS v4</h3>
+            <h3 class="font-bold text-zinc-950 text-xs uppercase tracking-wider font-mono">
+              Tailwind CSS v4
+            </h3>
           </div>
           <p class="text-xs text-zinc-600 leading-relaxed">
-            Thiết kế theo chuẩn Retro Editorial tối giản, hình khối vuông vức, viền sắc nét, tương phản cao và hỗ trợ đầy đủ thiết bị di động.
+            Thiết kế theo chuẩn Retro Editorial tối giản, hình khối vuông vức, viền sắc nét, tương
+            phản cao và hỗ trợ đầy đủ thiết bị di động.
           </p>
         </div>
 
         <div class="p-4 border-2 border-zinc-950 bg-[var(--retro-paper)] shadow-[3px_3px_0_var(--retro-ink)]">
           <div class="flex items-center gap-2 mb-1.5">
             <span class="w-2.5 h-2.5 border border-zinc-950 bg-amber-500"></span>
-            <h3 class="font-bold text-zinc-950 text-xs uppercase tracking-wider font-mono">Markdown & Live Preview</h3>
+            <h3 class="font-bold text-zinc-950 text-xs uppercase tracking-wider font-mono">
+              Markdown & Live Preview
+            </h3>
           </div>
           <p class="text-xs text-zinc-600 leading-relaxed">
-            Soạn thảo nội dung kỹ thuật với Markdown, xem trước thời gian thực, bảng biểu, danh sách và sao chép mã tự động.
+            Soạn thảo nội dung kỹ thuật với Markdown, xem trước thời gian thực, bảng biểu, danh sách
+            và sao chép mã tự động.
           </p>
         </div>
-
       </div>
-
     </div>
-
   </div>
-
 </BaseLayout>

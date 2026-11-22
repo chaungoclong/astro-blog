@@ -40,9 +40,9 @@
 
 ## Test report
 
-| Check | Status | Evidence / reason |
-| --- | --- | --- |
-| — | NOT RUN | — |
+| Check | Status  | Evidence / reason |
+| ----- | ------- | ----------------- |
+| —     | NOT RUN | —                 |
 
 ## Blockers
 

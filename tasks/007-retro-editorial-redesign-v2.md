@@ -5,6 +5,7 @@
 ## Scope
 
 Thiết kế lại toàn bộ UI/UX cho cả Admin và Blog Public theo định hướng thiết kế tối ưu hóa trải nghiệm người dùng:
+
 1. **Admin Console — Material Style + Minimal**: Giảm tương phản gắt, loại bỏ viền đen 2px thô cứng và đổ bóng vàng chói mắt; chuyển sang bảng màu Slate/Zinc dịu mắt, thẻ trắng viền mảnh 1px, bo góc mềm mại `rounded-lg/xl`, bóng đổ êm mắt, nút bấm Material filled/outlined, thanh điều hướng sidebar Dark Slate thanh lịch với active tab xanh dịu, trang soạn thảo bài viết (`new.astro`, `[id]/edit.astro`) và tạo menu trực quan, đồng bộ từng chi tiết.
 2. **Public Blog — Retro Editorial**: Giữ nguyên phong cách retro editorial tối giản, tinh tế; typography Newsreader + Manrope + DM Mono; mục lục TOC sticky định vị nội dung; thẻ bài viết vuông vức; trang tác giả và tìm kiếm thu hút, dễ điều hướng.
 

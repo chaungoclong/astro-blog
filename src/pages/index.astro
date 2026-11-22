@@ -1,29 +1,44 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { dbService } from '../lib/db';
+import { categoryService, postService, settingService } from '../api';
 import { formatDate, calculateReadingTime } from '../lib/utils';
 import { generateWebsiteSchema } from '../lib/seo';
 
-const settings = dbService.getSettings();
-const categories = dbService.getCategories();
+const settings = await settingService.getSettings();
+const categories = await categoryService.getCategories();
 const FIRST_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 6;
 const MAX_HOME_POSTS = 100;
 const POPULAR_POST_LIMIT = 4;
-const FALLBACK_COVER = 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&auto=format&fit=crop&q=80';
+const FALLBACK_COVER =
+  'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&auto=format&fit=crop&q=80';
 const page = Math.max(FIRST_PAGE, Number(Astro.url.searchParams.get('page')) || FIRST_PAGE);
 const pageSize = Number(settings.posts_per_page) || DEFAULT_PAGE_SIZE;
-const allPosts = dbService.getPosts({ status: 'published', limit: MAX_HOME_POSTS, sortBy: 'created_at DESC' });
+const allPosts = await postService.getPosts({
+  status: 'published',
+  limit: MAX_HOME_POSTS,
+  sortBy: 'created_at DESC',
+});
 const featuredPost = page === FIRST_PAGE ? allPosts[0] : undefined;
 const feedSource = page === FIRST_PAGE ? allPosts.slice(1) : allPosts;
 const feedOffset = page === FIRST_PAGE ? 0 : (page - FIRST_PAGE) * pageSize;
 const feedPosts = feedSource.slice(feedOffset, feedOffset + pageSize);
 const totalPages = Math.max(FIRST_PAGE, Math.ceil(allPosts.length / pageSize));
-const popularPosts = [...allPosts].sort((left, right) => right.views - left.views).slice(0, POPULAR_POST_LIMIT);
-const siteSchema = generateWebsiteSchema(settings.site_title || 'Astro TechLog', settings.site_description || 'Blog công nghệ, kiến trúc web hiện đại', Astro.url.origin);
+const popularPosts = [...allPosts]
+  .sort((left, right) => right.views - left.views)
+  .slice(0, POPULAR_POST_LIMIT);
+const siteSchema = generateWebsiteSchema(
+  settings.site_title || 'Astro TechLog',
+  settings.site_description || 'Blog công nghệ, kiến trúc web hiện đại',
+  Astro.url.origin
+);
 ---
 
-<BaseLayout title={settings.site_title || 'Astro TechLog'} description={settings.site_description} schema={siteSchema}>
+<BaseLayout
+  title={settings.site_title || 'Astro TechLog'}
+  description={settings.site_description}
+  schema={siteSchema}
+>
   <section class="home-intro">
     <div class="public-content-rail home-intro-grid">
       <div>
@@ -31,64 +46,150 @@ const siteSchema = generateWebsiteSchema(settings.site_title || 'Astro TechLog',
         <h1>{settings.site_title || 'Astro TechLog'}</h1>
       </div>
       <div class="home-intro-copy">
-        <p>{settings.site_subtitle || 'Ghi chép chuyên sâu về kiến trúc web, Astro, SQLite và kỹ nghệ xây dựng sản phẩm.'}</p>
-        <a href="#latest-posts">Đọc bài mới nhất <span aria-hidden="true">↓</span></a>
+        <p>
+          {settings.site_subtitle ||
+            'Ghi chép chuyên sâu về kiến trúc web, Astro, SQLite và kỹ nghệ xây dựng sản phẩm.'}
+        </p>
+        <a href="#latest-posts">
+          Đọc bài mới nhất <span aria-hidden="true">↓</span>
+        </a>
       </div>
     </div>
   </section>
 
   <nav class="home-topics" aria-label="Chuyên mục">
     <div class="public-content-rail">
-      <a href="/" aria-current="page">Tất cả <span>{allPosts.length}</span></a>
-      {categories.map((category) => <a href={`/category/${category.slug}`}>{category.name} <span>{category.post_count || 0}</span></a>)}
+      <a href="/" aria-current="page">
+        Tất cả <span>{allPosts.length}</span>
+      </a>
+      {categories.map((category) => (
+        <a href={`/category/${category.slug}`}>
+          {category.name} <span>{category.post_count || 0}</span>
+        </a>
+      ))}
     </div>
   </nav>
 
   <main class="public-content-rail home-main">
     {featuredPost && (
       <section class="home-featured" aria-labelledby="featured-heading">
-        <div class="home-section-label"><span>01</span><h2 id="featured-heading">Bài viết tiêu điểm</h2></div>
+        <div class="home-section-label">
+          <span>01</span>
+          <h2 id="featured-heading">Bài viết tiêu điểm</h2>
+        </div>
         <article class="home-featured-card">
-          <a class="home-featured-image" href={`/blog/${featuredPost.slug}`} tabindex="-1" aria-hidden="true"><img src={featuredPost.cover_image || FALLBACK_COVER} alt="" /></a>
+          <a
+            class="home-featured-image"
+            href={`/blog/${featuredPost.slug}`}
+            tabindex="-1"
+            aria-hidden="true"
+          >
+            <img src={featuredPost.cover_image || FALLBACK_COVER} alt="" />
+          </a>
           <div class="home-featured-copy">
-            <a class="home-category" href={`/category/${featuredPost.category}`}>{featuredPost.category}</a>
-            <h3><a href={`/blog/${featuredPost.slug}`}>{featuredPost.title}</a></h3>
+            <a class="home-category" href={`/category/${featuredPost.category}`}>
+              {featuredPost.category}
+            </a>
+            <h3>
+              <a href={`/blog/${featuredPost.slug}`}>{featuredPost.title}</a>
+            </h3>
             <p>{featuredPost.excerpt}</p>
-            <div class="home-meta"><time datetime={featuredPost.created_at}>{formatDate(featuredPost.created_at)}</time><span>{calculateReadingTime(featuredPost.content)}</span><span>{featuredPost.views} lượt xem</span></div>
-            <a class="home-read-link" href={`/blog/${featuredPost.slug}`}>Đọc bài viết <span aria-hidden="true">→</span></a>
+            <div class="home-meta">
+              <time datetime={featuredPost.created_at}>{formatDate(featuredPost.created_at)}</time>
+              <span>{calculateReadingTime(featuredPost.content)}</span>
+              <span>{featuredPost.views} lượt xem</span>
+            </div>
+            <a class="home-read-link" href={`/blog/${featuredPost.slug}`}>
+              Đọc bài viết <span aria-hidden="true">→</span>
+            </a>
           </div>
         </article>
       </section>
     )}
 
     <section id="latest-posts" class="home-latest" aria-labelledby="latest-heading">
-      <div class="home-section-label"><span>{featuredPost ? '02' : '01'}</span><div><h2 id="latest-heading">Bài viết mới nhất</h2><p>Cập nhật kiến thức và kinh nghiệm thực tế.</p></div></div>
+      <div class="home-section-label">
+        <span>{featuredPost ? '02' : '01'}</span>
+        <div>
+          <h2 id="latest-heading">Bài viết mới nhất</h2>
+          <p>Cập nhật kiến thức và kinh nghiệm thực tế.</p>
+        </div>
+      </div>
       {feedPosts.length ? (
         <div class="home-feed">
           {feedPosts.map((post, index) => (
             <article class="home-feed-item">
               <span class="home-feed-index">{String(index + 1).padStart(2, '0')}</span>
-              <a class="home-feed-image" href={`/blog/${post.slug}`} tabindex="-1" aria-hidden="true"><img src={post.cover_image || FALLBACK_COVER} alt="" loading="lazy" /></a>
+              <a
+                class="home-feed-image"
+                href={`/blog/${post.slug}`}
+                tabindex="-1"
+                aria-hidden="true"
+              >
+                <img src={post.cover_image || FALLBACK_COVER} alt="" loading="lazy" />
+              </a>
               <div class="home-feed-copy">
-                <div class="home-meta"><a href={`/category/${post.category}`}>{post.category}</a><time datetime={post.created_at}>{formatDate(post.created_at)}</time></div>
-                <h3><a href={`/blog/${post.slug}`}>{post.title}</a></h3>
+                <div class="home-meta">
+                  <a href={`/category/${post.category}`}>{post.category}</a>
+                  <time datetime={post.created_at}>{formatDate(post.created_at)}</time>
+                </div>
+                <h3>
+                  <a href={`/blog/${post.slug}`}>{post.title}</a>
+                </h3>
                 <p>{post.excerpt}</p>
               </div>
-              <a class="home-feed-arrow" href={`/blog/${post.slug}`} aria-label={`Đọc ${post.title}`}>→</a>
+              <a
+                class="home-feed-arrow"
+                href={`/blog/${post.slug}`}
+                aria-label={`Đọc ${post.title}`}
+              >
+                →
+              </a>
             </article>
           ))}
         </div>
-      ) : <div class="home-empty"><h3>Chưa có bài viết mới.</h3><p>Nội dung tiếp theo đang được chuẩn bị.</p></div>}
+      ) : (
+        <div class="home-empty">
+          <h3>Chưa có bài viết mới.</h3>
+          <p>Nội dung tiếp theo đang được chuẩn bị.</p>
+        </div>
+      )}
 
-      {totalPages > FIRST_PAGE && <nav class="home-pagination" aria-label="Phân trang">{page > FIRST_PAGE && <a href={`?page=${page - 1}`}>← Trang trước</a>}<span>Trang {page} / {totalPages}</span>{page < totalPages && <a href={`?page=${page + 1}`}>Trang tiếp →</a>}</nav>}
+      {totalPages > FIRST_PAGE && (
+        <nav class="home-pagination" aria-label="Phân trang">
+          {page > FIRST_PAGE && <a href={`?page=${page - 1}`}>← Trang trước</a>}
+          <span>
+            Trang {page} / {totalPages}
+          </span>
+          {page < totalPages && <a href={`?page=${page + 1}`}>Trang tiếp →</a>}
+        </nav>
+      )}
     </section>
 
     <section class="home-discovery" aria-labelledby="discovery-heading">
-      <div class="home-section-label"><span>{featuredPost ? '03' : '02'}</span><h2 id="discovery-heading">Khám phá thêm</h2></div>
+      <div class="home-section-label">
+        <span>{featuredPost ? '03' : '02'}</span>
+        <h2 id="discovery-heading">Khám phá thêm</h2>
+      </div>
       <div class="home-discovery-layout">
-        <div class="home-author"><p class="home-kicker">Người viết</p><h3>{settings.author_name || 'Châu Ngọc Long'}</h3><p>Chia sẻ những gì đã học được khi thiết kế, xây dựng và vận hành sản phẩm web.</p><a href="/about">Thông tin tác giả →</a></div>
+        <div class="home-author">
+          <p class="home-kicker">Người viết</p>
+          <h3>{settings.author_name || 'Châu Ngọc Long'}</h3>
+          <p>Chia sẻ những gì đã học được khi thiết kế, xây dựng và vận hành sản phẩm web.</p>
+          <a href="/about">Thông tin tác giả →</a>
+        </div>
         <ol class="home-popular">
-          {popularPosts.map((post, index) => <li><span>{String(index + 1).padStart(2, '0')}</span><div><a href={`/blog/${post.slug}`}>{post.title}</a><small>{post.views} lượt xem · {post.category}</small></div></li>)}
+          {popularPosts.map((post, index) => (
+            <li>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <div>
+                <a href={`/blog/${post.slug}`}>{post.title}</a>
+                <small>
+                  {post.views} lượt xem · {post.category}
+                </small>
+              </div>
+            </li>
+          ))}
         </ol>
       </div>
     </section>

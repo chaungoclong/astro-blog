@@ -64,19 +64,19 @@ High. Authorization becomes user-specific. Passwords remain scrypt hashes; user/
 
 ## Test report
 
-| Check | Status | Evidence / reason |
-| --- | --- | --- |
-| Build | PASS | `pnpm build` completed after schema, middleware, admin and public menu changes. |
-| Existing and new tests | PASS | `pnpm test`: 7/7 test files pass. |
-| RBAC inheritance | PASS | Migrated admin inherits every named permission through `super-admin`. |
-| Cycle protection | PASS | Category and menu self-parent attempts are rejected and test data is cleaned. |
-| Initial test run | FAIL → FIXED | Node ESM required `.ts` on the new internal permission imports; corrected and rerun successfully. |
-| Runtime/browser smoke | NOT RUN | Sandbox previously rejects binding `127.0.0.1:4321` with `EPERM`; independent UI test remains required. |
-| Current-menu migration | PASS | Test verifies persisted Home and nested Category navigation; migration v3 also repairs existing category items that had no managed parent. |
-| Menu source/nesting build | PASS | Astro build validates recursive public menu and post/page/category builder sources. |
-| Menu Manager rebuild | PASS | `pnpm build` completed with recoverable system sources, depth-first tree, filtered parent controls and guarded public recursion. |
-| Recursive hierarchy tests | PASS | `test/menu-manager.test.js` verifies Home/About sources, descendant exclusion, ancestor-cycle rejection and recursive branch deletion with cleanup. |
-| Existing access-control fixture | FAIL | `test/access-control.test.js` expects seeded `Trang chủ`, but current workspace data had that sample row deleted before this change. The permanent source now allows it to be restored from UI; agent did not mutate sample data. |
+| Check                           | Status       | Evidence / reason                                                                                                                                                                                                                 |
+| ------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build                           | PASS         | `pnpm build` completed after schema, middleware, admin and public menu changes.                                                                                                                                                   |
+| Existing and new tests          | PASS         | `pnpm test`: 7/7 test files pass.                                                                                                                                                                                                 |
+| RBAC inheritance                | PASS         | Migrated admin inherits every named permission through `super-admin`.                                                                                                                                                             |
+| Cycle protection                | PASS         | Category and menu self-parent attempts are rejected and test data is cleaned.                                                                                                                                                     |
+| Initial test run                | FAIL → FIXED | Node ESM required `.ts` on the new internal permission imports; corrected and rerun successfully.                                                                                                                                 |
+| Runtime/browser smoke           | NOT RUN      | Sandbox previously rejects binding `127.0.0.1:4321` with `EPERM`; independent UI test remains required.                                                                                                                           |
+| Current-menu migration          | PASS         | Test verifies persisted Home and nested Category navigation; migration v3 also repairs existing category items that had no managed parent.                                                                                        |
+| Menu source/nesting build       | PASS         | Astro build validates recursive public menu and post/page/category builder sources.                                                                                                                                               |
+| Menu Manager rebuild            | PASS         | `pnpm build` completed with recoverable system sources, depth-first tree, filtered parent controls and guarded public recursion.                                                                                                  |
+| Recursive hierarchy tests       | PASS         | `test/menu-manager.test.js` verifies Home/About sources, descendant exclusion, ancestor-cycle rejection and recursive branch deletion with cleanup.                                                                               |
+| Existing access-control fixture | FAIL         | `test/access-control.test.js` expects seeded `Trang chủ`, but current workspace data had that sample row deleted before this change. The permanent source now allows it to be restored from UI; agent did not mutate sample data. |
 
 ## Blockers
 

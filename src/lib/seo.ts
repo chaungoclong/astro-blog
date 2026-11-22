@@ -1,4 +1,4 @@
-import type { Post } from './db';
+import type { Post } from '../api/index.ts';
 
 /**
  * Generate Schema.org JSON-LD for WebSite

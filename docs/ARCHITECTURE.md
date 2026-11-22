@@ -4,20 +4,19 @@
 
 - Astro 5 SSR với Node adapter.
 - Tailwind CSS v4; CSS toàn cục ở `src/styles/global.css`.
-- Node 22 `DatabaseSync`/SQLite tại `data/blog.db`.
+- Node 22 `DatabaseSync`/SQLite tại `data/blog.db`, truy cập qua Kysely query builder với custom `NodeSqliteDialect`.
 - Markdown render bằng `marked`.
 
 ## Cấu trúc
 
-| Đường dẫn | Vai trò |
-| --- | --- |
-| `src/pages/` | Route public, admin và API endpoints. |
-| `src/layouts/` | `BaseLayout` public; `AdminLayout` back-office. |
-| `src/components/` | UI tái sử dụng. |
-| `src/lib/db.ts` | Schema, types và toàn bộ truy cập SQLite. |
-| `src/lib/auth.ts` | Password hash, session, xác thực cookie. |
-| `src/lib/seo.ts` | JSON-LD website/bài viết. |
-| `src/middleware.ts` | Bảo vệ admin chưa đăng nhập. |
+| Đường dẫn           | Vai trò                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/api/`          | Toàn bộ backend: Hono.js domain modules tại `modules/<domain>/` (`<entity>.{route,handler,service,repository}.ts`, `constant.ts`, `types.ts`, `index.ts`), `shared/` (`constant.ts`, `types.ts`, `middleware/auth.middleware.ts`, `index.ts`), `db/` (Kysely `NodeSqliteDialect`, `connection.ts`, `schema.ts`, `migrate.ts`, `seed.ts`), `app.ts`, `index.ts`. |
+| `src/pages/`        | Route public, admin và catch-all `api/[...path].ts` chuyển tiếp sang Hono.                                                                                                                                                                                                                                                                                      |
+| `src/layouts/`      | `BaseLayout` public; `AdminLayout` back-office.                                                                                                                                                                                                                                                                                                                 |
+| `src/components/`   | UI tái sử dụng.                                                                                                                                                                                                                                                                                                                                                 |
+| `src/lib/`          | Tiện ích thuần túy dùng chung (`seo.ts`, `utils.ts`).                                                                                                                                                                                                                                                                                                           |
+| `src/middleware.ts` | Bảo vệ admin chưa đăng nhập và phân quyền theo capability.                                                                                                                                                                                                                                                                                                      |
 
 ## Routing
 
@@ -29,7 +28,7 @@
 
 ## Dữ liệu và bảo mật
 
-Các bảng: `posts`, `categories`, `pages`, `settings`, `sessions`. Chỉ `dbService` truy cập SQLite.
+Các bảng: `posts`, `categories`, `pages`, `media`, `media_folders`, `settings`, `sessions`, `users`, `roles`, `permissions`, `user_roles`, `role_permissions`, `menu_items`. Chỉ các `*.repository.ts` trong `src/api/modules/<domain>/` truy cập SQLite thông qua Kysely (`db`), và routes/pages gọi tầng `*.service.ts`.
 
 - API thay đổi dữ liệu yêu cầu session hợp lệ.
 - Draft không render cho khách.

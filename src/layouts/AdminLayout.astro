@@ -1,17 +1,42 @@
 ---
 import '../styles/global.css';
-import { dbService } from '../lib/db';
+import { settingService, statsService } from '../api';
 
 interface Props {
   title?: string;
-  activeNav?: 'dashboard' | 'posts' | 'new-post' | 'pages' | 'new-page' | 'media' | 'categories' | 'menus' | 'users' | 'roles' | 'permissions' | 'settings';
+  activeNav?:
+    | 'dashboard'
+    | 'posts'
+    | 'new-post'
+    | 'pages'
+    | 'new-page'
+    | 'media'
+    | 'categories'
+    | 'menus'
+    | 'users'
+    | 'roles'
+    | 'permissions'
+    | 'settings';
 }
 
 const { title = 'Quản trị hệ thống', activeNav = 'dashboard' } = Astro.props;
-const settings = dbService.getSettings();
+const settings = await settingService.getSettings();
 const siteTitle = settings.site_title || 'Astro TechLog';
-const stats = dbService.getStats();
-const navGroups: Record<string, string> = { dashboard: 'Tổng quan', posts: 'Nội dung', 'new-post': 'Nội dung', pages: 'Nội dung', 'new-page': 'Nội dung', media: 'Nội dung', categories: 'Cấu trúc', menus: 'Cấu trúc', users: 'Phân quyền', roles: 'Phân quyền', permissions: 'Phân quyền', settings: 'Hệ thống' };
+const stats = await statsService.getStats();
+const navGroups: Record<string, string> = {
+  dashboard: 'Tổng quan',
+  posts: 'Nội dung',
+  'new-post': 'Nội dung',
+  pages: 'Nội dung',
+  'new-page': 'Nội dung',
+  media: 'Nội dung',
+  categories: 'Cấu trúc',
+  menus: 'Cấu trúc',
+  users: 'Phân quyền',
+  roles: 'Phân quyền',
+  permissions: 'Phân quyền',
+  settings: 'Hệ thống',
+};
 const navGroup = navGroups[activeNav] || 'Quản trị';
 ---
 
@@ -23,11 +48,12 @@ const navGroup = navGroups[activeNav] || 'Quản trị';
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title} | Admin Console - {siteTitle}</title>
   </head>
-  <body class="admin-theme h-full flex overflow-hidden bg-slate-50 text-slate-800 antialiased" data-forbidden={Astro.url.searchParams.has('forbidden') ? 'true' : 'false'}>
-    
+  <body
+    class="admin-theme h-full flex overflow-hidden bg-slate-50 text-slate-800 antialiased"
+    data-forbidden={Astro.url.searchParams.has('forbidden') ? 'true' : 'false'}
+  >
     <!-- Sidebar for Desktop (Material Minimal Drawer) -->
     <aside class="w-72 bg-slate-900 text-slate-300 flex flex-col flex-shrink-0 h-screen border-r border-slate-800 select-none hidden md:flex z-40">
-      
       <!-- Brand & Project Header -->
       <div class="h-16 flex items-center justify-between px-5 border-b border-slate-800 bg-slate-900">
         <a href="/admin" class="flex items-center gap-3 group">
@@ -37,14 +63,21 @@ const navGroup = navGroups[activeNav] || 'Quản trị';
           <div>
             <div class="flex items-center gap-1.5">
               <span class="font-bold text-white text-sm tracking-tight">TechCMS</span>
-              <span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] font-mono text-slate-400">v5</span>
+              <span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] font-mono text-slate-400">
+                v5
+              </span>
             </div>
-            <span class="text-[11px] text-slate-400 font-medium block truncate max-w-[130px]">{siteTitle}</span>
+            <span class="text-[11px] text-slate-400 font-medium block truncate max-w-[130px]">
+              {siteTitle}
+            </span>
           </div>
         </a>
 
         <!-- Live DB Status Pill -->
-        <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-mono text-emerald-400 font-medium" title="Cơ sở dữ liệu SQLite hoạt động bình thường">
+        <div
+          class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-mono text-emerald-400 font-medium"
+          title="Cơ sở dữ liệu SQLite hoạt động bình thường"
+        >
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
           <span>SQL</span>
         </div>
@@ -52,96 +85,145 @@ const navGroup = navGroups[activeNav] || 'Quản trị';
 
       <!-- Navigation Menu -->
       <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto text-xs font-medium">
-        
         <div class="px-3 pt-2 pb-1 text-[11px] uppercase font-semibold text-slate-400 tracking-wider">
           Tổng quan
         </div>
 
-        <a 
-          href="/admin" 
+        <a
+          href="/admin"
           class={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${activeNav === 'dashboard' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/70'}`}
         >
           <div class="flex items-center gap-2.5">
             <svg class="w-4 h-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+              ></path>
             </svg>
             <span>Tổng quan</span>
           </div>
-          <span class={`text-[10px] font-mono ${activeNav === 'dashboard' ? 'text-white/80' : 'text-slate-500'}`}>D1</span>
+          <span
+            class={`text-[10px] font-mono ${activeNav === 'dashboard' ? 'text-white/80' : 'text-slate-500'}`}
+          >
+            D1
+          </span>
         </a>
 
-        <div class="px-3 pt-5 pb-1 text-[11px] uppercase font-semibold text-slate-400 tracking-wider">Nội dung</div>
+        <div class="px-3 pt-5 pb-1 text-[11px] uppercase font-semibold text-slate-400 tracking-wider">
+          Nội dung
+        </div>
 
-        <a 
-          href="/admin/posts" 
+        <a
+          href="/admin/posts"
           class={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${activeNav === 'posts' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/70'}`}
         >
           <div class="flex items-center gap-2.5">
             <svg class="w-4 h-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+              ></path>
             </svg>
             <span>Tất cả bài viết</span>
           </div>
-          <span class={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${activeNav === 'posts' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'}`}>
+          <span
+            class={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${activeNav === 'posts' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'}`}
+          >
             {stats.totalPosts}
           </span>
         </a>
 
-        <a 
-          href="/admin/posts/new" 
+        <a
+          href="/admin/posts/new"
           class={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${activeNav === 'new-post' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'border border-dashed border-slate-700/80 text-slate-300 hover:text-white hover:bg-slate-800/70 hover:border-slate-600'}`}
         >
           <div class="flex items-center gap-2.5">
             <svg class="w-4 h-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              ></path>
             </svg>
             <span>Soạn bài mới</span>
           </div>
-          <span class={`text-[10px] font-mono font-medium ${activeNav === 'new-post' ? 'text-white/80' : 'text-slate-400'}`}>+New</span>
+          <span
+            class={`text-[10px] font-mono font-medium ${activeNav === 'new-post' ? 'text-white/80' : 'text-slate-400'}`}
+          >
+            +New
+          </span>
         </a>
 
-        <div class="px-3 pt-5 pb-1 text-[11px] uppercase font-semibold text-slate-400 tracking-wider">Cấu trúc</div>
+        <div class="px-3 pt-5 pb-1 text-[11px] uppercase font-semibold text-slate-400 tracking-wider">
+          Cấu trúc
+        </div>
 
-        <a 
-          href="/admin/categories" 
+        <a
+          href="/admin/categories"
           class={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${activeNav === 'categories' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/70'}`}
         >
           <div class="flex items-center gap-2.5">
             <svg class="w-4 h-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+              ></path>
             </svg>
             <span>Chuyên mục</span>
           </div>
-          <span class={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${activeNav === 'categories' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'}`}>
+          <span
+            class={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${activeNav === 'categories' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'}`}
+          >
             {stats.totalCategories}
           </span>
         </a>
 
-        <a 
-          href="/admin/pages" 
+        <a
+          href="/admin/pages"
           class={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${activeNav === 'pages' || activeNav === 'new-page' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/70'}`}
         >
           <div class="flex items-center gap-2.5">
             <svg class="w-4 h-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 3h7l3 3v15H7zM14 3v4h4M10 12h4M10 16h4" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M7 3h7l3 3v15H7zM14 3v4h4M10 12h4M10 16h4"
+              />
             </svg>
             <span>Trang tĩnh</span>
           </div>
-          <span class={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${activeNav === 'pages' || activeNav === 'new-page' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'}`}>{stats.totalPages}</span>
+          <span
+            class={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${activeNav === 'pages' || activeNav === 'new-page' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'}`}
+          >
+            {stats.totalPages}
+          </span>
         </a>
 
-        <a 
-          href="/admin/media" 
+        <a
+          href="/admin/media"
           class={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors ${activeNav === 'media' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/70'}`}
         >
           <svg class="w-4 h-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4-4 3 3 5-6 4 5v4H4zM4 4h16v16H4z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16l4-4 3 3 5-6 4 5v4H4zM4 4h16v16H4z"
+            />
           </svg>
           <span>Media Library</span>
         </a>
 
-        <a 
-          href="/admin/menus" 
+        <a
+          href="/admin/menus"
           class={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors ${activeNav === 'menus' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/70'}`}
         >
           <svg class="h-4 w-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,48 +232,77 @@ const navGroup = navGroups[activeNav] || 'Quản trị';
           <span>Menu website</span>
         </a>
 
-        <div class="px-3 pt-5 pb-1 text-[11px] uppercase font-semibold text-slate-400 tracking-wider">Phân quyền</div>
+        <div class="px-3 pt-5 pb-1 text-[11px] uppercase font-semibold text-slate-400 tracking-wider">
+          Phân quyền
+        </div>
 
-        <a 
-          href="/admin/users" 
+        <a
+          href="/admin/users"
           class={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors ${activeNav === 'users' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/70'}`}
         >
           <svg class="h-4 w-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+            />
           </svg>
           <span>Người dùng</span>
         </a>
 
-        <a 
-          href="/admin/roles" 
+        <a
+          href="/admin/roles"
           class={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors ${activeNav === 'roles' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/70'}`}
         >
           <svg class="h-4 w-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+            />
           </svg>
           <span>Vai trò</span>
         </a>
 
-        <a 
-          href="/admin/permissions" 
+        <a
+          href="/admin/permissions"
           class={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors ${activeNav === 'permissions' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/70'}`}
         >
           <svg class="h-4 w-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+            />
           </svg>
           <span>Permissions</span>
         </a>
 
-        <div class="px-3 pt-5 pb-1 text-[11px] uppercase font-semibold text-slate-400 tracking-wider">Hệ thống</div>
+        <div class="px-3 pt-5 pb-1 text-[11px] uppercase font-semibold text-slate-400 tracking-wider">
+          Hệ thống
+        </div>
 
-        <a 
-          href="/admin/settings" 
+        <a
+          href="/admin/settings"
           class={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${activeNav === 'settings' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/70'}`}
         >
           <div class="flex items-center gap-2.5">
             <svg class="w-4 h-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              ></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              ></path>
             </svg>
             <span>Cài đặt hệ thống</span>
           </div>
@@ -201,20 +312,29 @@ const navGroup = navGroups[activeNav] || 'Quản trị';
           Liên kết ngoài
         </div>
 
-        <a 
-          href="/" 
+        <a
+          href="/"
           target="_blank"
           class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/70 transition-colors"
         >
           <div class="flex items-center gap-2.5">
-            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+            <svg
+              class="w-4 h-4 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+              ></path>
             </svg>
             <span>Xem Blog</span>
           </div>
           <span class="text-[10px] font-mono text-slate-500">↗</span>
         </a>
-
       </nav>
 
       <!-- User Profile in Sidebar Footer -->
@@ -225,88 +345,125 @@ const navGroup = navGroups[activeNav] || 'Quản trị';
               AD
             </div>
             <div class="overflow-hidden">
-              <span class="text-xs font-semibold text-white block truncate">{settings.admin_username || 'admin'}</span>
+              <span class="text-xs font-semibold text-white block truncate">
+                {settings.admin_username || 'admin'}
+              </span>
               <span class="text-[10px] text-slate-400 block truncate font-mono">Super Admin</span>
             </div>
           </div>
 
-          <a 
-            href="/api/auth/logout" 
+          <a
+            href="/api/auth/logout"
             title="Đăng xuất tài khoản"
             class="p-1.5 rounded-md text-slate-400 hover:text-red-400 hover:bg-slate-700/60 transition-colors cursor-pointer"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              ></path>
             </svg>
           </a>
         </div>
       </div>
-
     </aside>
 
     <!-- Main Content Container with Independent Scroll -->
     <div class="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
-      
       <!-- Top Header Bar (Material Elevation) -->
       <header class="h-16 bg-white border-b border-slate-200/80 px-5 sm:px-8 flex items-center justify-between flex-shrink-0 z-30 shadow-2xs">
-        
         <div class="flex items-center gap-3">
           <!-- Mobile Menu Toggle Button -->
-          <button 
+          <button
             id="mobile-menu-btn"
             type="button"
             class="md:hidden p-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer"
             aria-label="Mở menu điều hướng"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              ></path>
             </svg>
           </button>
 
           <!-- Breadcrumb navigation -->
-          <nav aria-label="Breadcrumb" class="flex items-center gap-2 overflow-x-auto whitespace-nowrap text-xs font-medium text-slate-500">
-            <a href="/admin" class="hover:text-blue-600 transition-colors">Admin</a>
-            <span aria-hidden="true" class="text-slate-300">/</span>
+          <nav
+            aria-label="Breadcrumb"
+            class="flex items-center gap-2 overflow-x-auto whitespace-nowrap text-xs font-medium text-slate-500"
+          >
+            <a href="/admin" class="hover:text-blue-600 transition-colors">
+              Admin
+            </a>
+            <span aria-hidden="true" class="text-slate-300">
+              /
+            </span>
             <span>{navGroup}</span>
-            <span aria-hidden="true" class="text-slate-300">/</span>
+            <span aria-hidden="true" class="text-slate-300">
+              /
+            </span>
             <h1 class="font-bold text-slate-900 text-sm">{title}</h1>
           </nav>
         </div>
 
         <!-- Top Right Actions -->
         <div class="flex items-center gap-2.5">
-          <a 
-            href="/" 
+          <a
+            href="/"
             target="_blank"
             class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
           >
-            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+            <svg
+              class="w-3.5 h-3.5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+              ></path>
             </svg>
             <span>Xem Blog</span>
           </a>
 
-          <a 
-            href="/admin/posts/new" 
+          <a
+            href="/admin/posts/new"
             class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs text-xs font-semibold transition-colors"
           >
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              ></path>
             </svg>
             <span>+ Viết bài mới</span>
           </a>
 
-          <a 
-            href="/api/auth/logout" 
+          <a
+            href="/api/auth/logout"
             class="p-2 rounded-lg border border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-slate-500 text-xs font-medium transition-colors cursor-pointer"
             title="Đăng xuất"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              ></path>
             </svg>
           </a>
         </div>
-
       </header>
 
       <!-- Scrollable Main Content Area -->
@@ -315,47 +472,129 @@ const navGroup = navGroups[activeNav] || 'Quản trị';
           <slot />
         </div>
       </main>
-
     </div>
 
     <!-- Mobile Drawer -->
-    <div id="mobile-drawer" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden md:hidden">
+    <div
+      id="mobile-drawer"
+      class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden md:hidden"
+    >
       <div class="w-72 bg-slate-900 text-slate-300 h-full flex flex-col p-4 border-r border-slate-800 shadow-2xl">
         <div class="flex items-center justify-between pb-4 border-b border-slate-800">
           <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">TC</div>
+            <div class="w-7 h-7 rounded-lg bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
+              TC
+            </div>
             <span class="font-bold text-white text-sm">TechCMS</span>
           </div>
-          <button id="close-drawer-btn" class="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800" aria-label="Đóng menu">
+          <button
+            id="close-drawer-btn"
+            class="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800"
+            aria-label="Đóng menu"
+          >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
             </svg>
           </button>
         </div>
 
         <nav class="space-y-1 text-xs font-medium py-4 flex-1 overflow-y-auto">
-          <a href="/admin" class={`block px-3 py-2 rounded-lg ${activeNav === 'dashboard' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>Tổng quan</a>
-          <a href="/admin/posts" class={`block px-3 py-2 rounded-lg ${activeNav === 'posts' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>Tất cả bài viết</a>
-          <a href="/admin/posts/new" class="block px-3 py-2 rounded-lg border border-dashed border-slate-700 text-slate-300 hover:bg-slate-800">+ Viết bài mới</a>
-          <a href="/admin/categories" class={`block px-3 py-2 rounded-lg ${activeNav === 'categories' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>Chuyên mục</a>
-          <a href="/admin/pages" class={`block px-3 py-2 rounded-lg ${activeNav === 'pages' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>Trang tĩnh</a>
-          <a href="/admin/media" class={`block px-3 py-2 rounded-lg ${activeNav === 'media' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>Media Library</a>
-          <a href="/admin/menus" class={`block px-3 py-2 rounded-lg ${activeNav === 'menus' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>Menu website</a>
-          <a href="/admin/users" class={`block px-3 py-2 rounded-lg ${activeNav === 'users' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>Người dùng</a>
-          <a href="/admin/roles" class={`block px-3 py-2 rounded-lg ${activeNav === 'roles' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>Vai trò</a>
-          <a href="/admin/permissions" class={`block px-3 py-2 rounded-lg ${activeNav === 'permissions' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>Permissions</a>
-          <a href="/admin/settings" class={`block px-3 py-2 rounded-lg ${activeNav === 'settings' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>Cài đặt hệ thống</a>
-          <a href="/" target="_blank" class="block px-3 py-2 rounded-lg text-blue-400 hover:bg-slate-800">Xem Blog ↗</a>
+          <a
+            href="/admin"
+            class={`block px-3 py-2 rounded-lg ${activeNav === 'dashboard' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}
+          >
+            Tổng quan
+          </a>
+          <a
+            href="/admin/posts"
+            class={`block px-3 py-2 rounded-lg ${activeNav === 'posts' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}
+          >
+            Tất cả bài viết
+          </a>
+          <a
+            href="/admin/posts/new"
+            class="block px-3 py-2 rounded-lg border border-dashed border-slate-700 text-slate-300 hover:bg-slate-800"
+          >
+            + Viết bài mới
+          </a>
+          <a
+            href="/admin/categories"
+            class={`block px-3 py-2 rounded-lg ${activeNav === 'categories' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}
+          >
+            Chuyên mục
+          </a>
+          <a
+            href="/admin/pages"
+            class={`block px-3 py-2 rounded-lg ${activeNav === 'pages' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}
+          >
+            Trang tĩnh
+          </a>
+          <a
+            href="/admin/media"
+            class={`block px-3 py-2 rounded-lg ${activeNav === 'media' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}
+          >
+            Media Library
+          </a>
+          <a
+            href="/admin/menus"
+            class={`block px-3 py-2 rounded-lg ${activeNav === 'menus' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}
+          >
+            Menu website
+          </a>
+          <a
+            href="/admin/users"
+            class={`block px-3 py-2 rounded-lg ${activeNav === 'users' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}
+          >
+            Người dùng
+          </a>
+          <a
+            href="/admin/roles"
+            class={`block px-3 py-2 rounded-lg ${activeNav === 'roles' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}
+          >
+            Vai trò
+          </a>
+          <a
+            href="/admin/permissions"
+            class={`block px-3 py-2 rounded-lg ${activeNav === 'permissions' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}
+          >
+            Permissions
+          </a>
+          <a
+            href="/admin/settings"
+            class={`block px-3 py-2 rounded-lg ${activeNav === 'settings' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}
+          >
+            Cài đặt hệ thống
+          </a>
+          <a
+            href="/"
+            target="_blank"
+            class="block px-3 py-2 rounded-lg text-blue-400 hover:bg-slate-800"
+          >
+            Xem Blog ↗
+          </a>
         </nav>
 
-        <a href="/api/auth/logout" class="block px-3 py-2 text-xs font-semibold text-red-400 hover:bg-slate-800 rounded-lg border border-red-500/20 text-center">
+        <a
+          href="/api/auth/logout"
+          class="block px-3 py-2 text-xs font-semibold text-red-400 hover:bg-slate-800 rounded-lg border border-red-500/20 text-center"
+        >
           Đăng xuất
         </a>
       </div>
     </div>
 
     <!-- Material Toast Region -->
-    <div id="admin-toast-region" class="pointer-events-none fixed right-4 top-4 z-[100] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2" aria-live="polite" aria-atomic="true"></div>
+    <div
+      id="admin-toast-region"
+      class="pointer-events-none fixed right-4 top-4 z-[100] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
 
     <script>
       const TOAST_DURATION_MS = 4200;
@@ -365,17 +604,23 @@ const navGroup = navGroups[activeNav] || 'Quản trị';
         error: 'border border-red-200 bg-red-50/95 text-red-950 shadow-md',
         info: 'border border-blue-200 bg-blue-50/95 text-blue-950 shadow-md',
       };
-      (window as any).showAdminToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+      (window as any).showAdminToast = (
+        message: string,
+        type: 'success' | 'error' | 'info' = 'info'
+      ) => {
         const region = document.getElementById('admin-toast-region');
         if (!region) return;
         const toast = document.createElement('div');
-        toast.className = 'pointer-events-auto flex items-start gap-3 p-3.5 text-xs font-medium rounded-xl transition-all duration-200 ' + (TOAST_STYLES[type] || TOAST_STYLES.info);
+        toast.className =
+          'pointer-events-auto flex items-start gap-3 p-3.5 text-xs font-medium rounded-xl transition-all duration-200 ' +
+          (TOAST_STYLES[type] || TOAST_STYLES.info);
         const text = document.createElement('span');
         const close = document.createElement('button');
         text.className = 'flex-1 leading-relaxed';
         text.textContent = message;
         close.type = 'button';
-        close.className = 'p-0.5 rounded text-current opacity-60 hover:opacity-100 hover:bg-black/5 cursor-pointer';
+        close.className =
+          'p-0.5 rounded text-current opacity-60 hover:opacity-100 hover:bg-black/5 cursor-pointer';
         close.textContent = '✕';
         close.setAttribute('aria-label', 'Đóng thông báo');
         close.addEventListener('click', () => toast.remove());
@@ -387,7 +632,10 @@ const navGroup = navGroups[activeNav] || 'Quản trị';
           setTimeout(() => toast.remove(), 200);
         }, TOAST_DURATION_MS);
       };
-      (window as any).setAdminFlash = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+      (window as any).setAdminFlash = (
+        message: string,
+        type: 'success' | 'error' | 'info' = 'info'
+      ) => {
         window.sessionStorage.setItem(ADMIN_FLASH_KEY, JSON.stringify({ message, type }));
       };
 
@@ -424,6 +672,5 @@ const navGroup = navGroups[activeNav] || 'Quản trị';
         }
       });
     </script>
-
   </body>
 </html>

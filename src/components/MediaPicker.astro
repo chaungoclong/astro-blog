@@ -1,20 +1,75 @@
 ---
 const ACCEPTED_IMAGE_TYPES = 'image/png,image/jpeg,image/webp,image/gif';
 ---
+
 <div class="media-picker">
-  <button type="button" class="admin-secondary-btn w-full" id="open-cover-media">Chọn ảnh từ File Manager</button>
-  <div id="media-picker-modal" class="fixed inset-0 z-[60] hidden bg-zinc-950/60 p-3 sm:p-8" role="dialog" aria-modal="true" aria-labelledby="media-picker-title">
+  <button type="button" class="admin-secondary-btn w-full" id="open-cover-media">
+    Chọn ảnh từ File Manager
+  </button>
+  <div
+    id="media-picker-modal"
+    class="fixed inset-0 z-[60] hidden bg-zinc-950/60 p-3 sm:p-8"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="media-picker-title"
+  >
     <div class="mx-auto flex h-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-      <header class="flex items-center justify-between border-b border-zinc-200 p-4 sm:p-5"><div><p class="admin-eyebrow">File Manager</p><h2 id="media-picker-title" class="font-black text-zinc-950">Chọn ảnh</h2></div><button type="button" id="close-media-picker" class="admin-icon-btn">Đóng</button></header>
+      <header class="flex items-center justify-between border-b border-zinc-200 p-4 sm:p-5">
+        <div>
+          <p class="admin-eyebrow">File Manager</p>
+          <h2 id="media-picker-title" class="font-black text-zinc-950">
+            Chọn ảnh
+          </h2>
+        </div>
+        <button type="button" id="close-media-picker" class="admin-icon-btn">
+          Đóng
+        </button>
+      </header>
       <div class="flex flex-col gap-3 border-b border-zinc-100 p-4 sm:flex-row sm:items-center">
-        <input id="media-picker-file" type="file" accept={ACCEPTED_IMAGE_TYPES} class="min-w-0 flex-1 rounded-lg border border-zinc-200 p-2 text-xs" />
-        <button id="media-picker-upload-button" type="button" class="admin-primary-btn">Tải ảnh vào thư mục này</button>
+        <input
+          id="media-picker-file"
+          type="file"
+          accept={ACCEPTED_IMAGE_TYPES}
+          class="min-w-0 flex-1 rounded-lg border border-zinc-200 p-2 text-xs"
+        />
+        <button id="media-picker-upload-button" type="button" class="admin-primary-btn">
+          Tải ảnh vào thư mục này
+        </button>
       </div>
       <div class="flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
-        <aside class="border-b border-zinc-200 bg-zinc-50/80 p-3 lg:border-b-0 lg:border-r" aria-label="Cây thư mục chọn ảnh"><div id="media-picker-tree" class="max-h-36 overflow-auto lg:max-h-[calc(100vh-18rem)]"></div></aside>
+        <aside
+          class="border-b border-zinc-200 bg-zinc-50/80 p-3 lg:border-b-0 lg:border-r"
+          aria-label="Cây thư mục chọn ảnh"
+        >
+          <div
+            id="media-picker-tree"
+            class="max-h-36 overflow-auto lg:max-h-[calc(100vh-18rem)]"
+          ></div>
+        </aside>
         <main class="flex min-h-0 flex-col">
-          <div class="border-b border-zinc-100 px-4 py-3"><nav id="media-picker-breadcrumb" class="flex flex-wrap items-center gap-1 text-xs" aria-label="Đường dẫn thư mục"></nav><p id="media-picker-message" class="mt-2 text-xs text-zinc-500" aria-live="polite">Chọn ảnh để sử dụng.</p></div>
-          <div id="media-picker-content" class="min-h-0 flex-1 overflow-y-auto p-4"><div id="media-picker-folders" class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"></div><div id="media-picker-grid" class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4"></div><div id="media-picker-empty" class="hidden py-16 text-center text-sm text-zinc-500">Thư mục này chưa có ảnh hoặc thư mục con.</div></div>
+          <div class="border-b border-zinc-100 px-4 py-3">
+            <nav
+              id="media-picker-breadcrumb"
+              class="flex flex-wrap items-center gap-1 text-xs"
+              aria-label="Đường dẫn thư mục"
+            ></nav>
+            <p id="media-picker-message" class="mt-2 text-xs text-zinc-500" aria-live="polite">
+              Chọn ảnh để sử dụng.
+            </p>
+          </div>
+          <div id="media-picker-content" class="min-h-0 flex-1 overflow-y-auto p-4">
+            <div
+              id="media-picker-folders"
+              class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
+            ></div>
+            <div
+              id="media-picker-grid"
+              class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4"
+            ></div>
+            <div id="media-picker-empty" class="hidden py-16 text-center text-sm text-zinc-500">
+              Thư mục này chưa có ảnh hoặc thư mục con.
+            </div>
+          </div>
         </main>
       </div>
     </div>
@@ -22,40 +77,340 @@ const ACCEPTED_IMAGE_TYPES = 'image/png,image/jpeg,image/webp,image/gif';
 </div>
 
 <script>
-  const MEDIA_API_URL = '/api/media'; const POST_METHOD = 'POST'; const HIDDEN_CLASS = 'hidden'; const COVER_MODE = 'cover'; const CONTENT_MODE = 'content'; const ROOT_FOLDER = ''; const ROOT_TREE_KEY = '__root'; const FOLDER_SEPARATOR = '/'; const ESCAPE_KEY = 'Escape'; const TREE_STATE_KEY = 'media-picker-expanded-folders';
-  const IMAGE_ALT_TEXT = 'Mô tả ảnh'; const LOADING_MESSAGE = 'Đang tải File Manager…'; const UPLOADING_MESSAGE = 'Đang tải ảnh lên…'; const UPLOAD_SUCCESS_MESSAGE = 'Đã tải ảnh vào thư mục hiện tại.';
-  const toast = (text: string, type: 'success' | 'error' | 'info' = 'info') => (window as any).showAdminToast?.(text, type);
-  const modal = document.querySelector('#media-picker-modal') as HTMLDivElement; const grid = document.querySelector('#media-picker-grid') as HTMLDivElement; const folderGrid = document.querySelector('#media-picker-folders') as HTMLDivElement; const tree = document.querySelector('#media-picker-tree') as HTMLDivElement; const breadcrumb = document.querySelector('#media-picker-breadcrumb') as HTMLElement; const emptyState = document.querySelector('#media-picker-empty') as HTMLElement; const message = document.querySelector('#media-picker-message') as HTMLElement; const uploadInput = document.querySelector('#media-picker-file') as HTMLInputElement; const uploadButton = document.querySelector('#media-picker-upload-button') as HTMLButtonElement;
-  let mode = COVER_MODE; let currentFolder = ROOT_FOLDER; let mediaItems: Array<{ url: string; filename: string; originalName?: string; folder?: string; type: string }> = []; let folders: string[] = []; let returnFocus: HTMLElement | null = null; const expandedFolders = new Set(JSON.parse(sessionStorage.getItem(TREE_STATE_KEY) || JSON.stringify([ROOT_TREE_KEY])));
+  const MEDIA_API_URL = '/api/media';
+  const POST_METHOD = 'POST';
+  const HIDDEN_CLASS = 'hidden';
+  const COVER_MODE = 'cover';
+  const CONTENT_MODE = 'content';
+  const ROOT_FOLDER = '';
+  const ROOT_TREE_KEY = '__root';
+  const FOLDER_SEPARATOR = '/';
+  const ESCAPE_KEY = 'Escape';
+  const TREE_STATE_KEY = 'media-picker-expanded-folders';
+  const IMAGE_ALT_TEXT = 'Mô tả ảnh';
+  const LOADING_MESSAGE = 'Đang tải File Manager…';
+  const UPLOADING_MESSAGE = 'Đang tải ảnh lên…';
+  const UPLOAD_SUCCESS_MESSAGE = 'Đã tải ảnh vào thư mục hiện tại.';
+  const toast = (text: string, type: 'success' | 'error' | 'info' = 'info') =>
+    (window as any).showAdminToast?.(text, type);
+  const modal = document.querySelector('#media-picker-modal') as HTMLDivElement;
+  const grid = document.querySelector('#media-picker-grid') as HTMLDivElement;
+  const folderGrid = document.querySelector('#media-picker-folders') as HTMLDivElement;
+  const tree = document.querySelector('#media-picker-tree') as HTMLDivElement;
+  const breadcrumb = document.querySelector('#media-picker-breadcrumb') as HTMLElement;
+  const emptyState = document.querySelector('#media-picker-empty') as HTMLElement;
+  const message = document.querySelector('#media-picker-message') as HTMLElement;
+  const uploadInput = document.querySelector('#media-picker-file') as HTMLInputElement;
+  const uploadButton = document.querySelector('#media-picker-upload-button') as HTMLButtonElement;
+  let mode = COVER_MODE;
+  let currentFolder = ROOT_FOLDER;
+  let mediaItems: Array<{
+    url: string;
+    filename: string;
+    originalName?: string;
+    folder?: string;
+    type: string;
+  }> = [];
+  let folders: string[] = [];
+  let returnFocus: HTMLElement | null = null;
+  const expandedFolders = new Set(
+    JSON.parse(sessionStorage.getItem(TREE_STATE_KEY) || JSON.stringify([ROOT_TREE_KEY]))
+  );
   const folderLabel = (folder: string) => folder.split(FOLDER_SEPARATOR).at(-1) || folder;
-  const parentFolder = (folder: string) => folder.includes(FOLDER_SEPARATOR) ? folder.slice(0, folder.lastIndexOf(FOLDER_SEPARATOR)) : ROOT_FOLDER;
+  const parentFolder = (folder: string) =>
+    folder.includes(FOLDER_SEPARATOR)
+      ? folder.slice(0, folder.lastIndexOf(FOLDER_SEPARATOR))
+      : ROOT_FOLDER;
   const treeKey = (folder: string) => folder || ROOT_TREE_KEY;
-  function persistTreeState() { sessionStorage.setItem(TREE_STATE_KEY, JSON.stringify([...expandedFolders])); }
-  function expandAncestors(folder: string) { expandedFolders.add(ROOT_TREE_KEY); let parent = parentFolder(folder); while (parent) { expandedFolders.add(parent); parent = parentFolder(parent); } persistTreeState(); }
-  function closePicker() { modal.classList.add(HIDDEN_CLASS); returnFocus?.focus(); }
-  function selectCover(url: string) { const input = document.querySelector('#cover_image') as HTMLInputElement; const preview = document.querySelector('#cover-preview-img') as HTMLImageElement; input.value = url; preview.src = url; input.dispatchEvent(new Event('input', { bubbles: true })); }
-  function insertContentImage(url: string) { const editor = document.querySelector('#content') as HTMLTextAreaElement; editor.setRangeText('![' + IMAGE_ALT_TEXT + '](' + url + ')', editor.selectionStart, editor.selectionEnd, 'end'); editor.focus(); }
-  function chooseMedia(url: string) { if (mode === CONTENT_MODE) insertContentImage(url); else selectCover(url); closePicker(); }
-  function createFolderButton(folder: string, className: string) { const button = document.createElement('button'); button.type = 'button'; button.className = className; button.dataset.folder = folder; button.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-10Z"/></svg><span></span>'; button.querySelector('span')!.textContent = folderLabel(folder); button.addEventListener('click', () => openFolder(folder)); return button; }
-  function createImageCard(item: (typeof mediaItems)[number]) { const button = document.createElement('button'); const image = document.createElement('img'); const label = document.createElement('span'); button.type = 'button'; button.className = 'overflow-hidden rounded-xl border border-zinc-200 bg-white text-left transition hover:border-teal-500 hover:ring-2 hover:ring-teal-100'; image.src = item.url; image.alt = ''; image.className = 'aspect-video w-full object-cover'; label.textContent = item.originalName || item.filename; label.className = 'block truncate p-2 text-xs font-semibold text-zinc-700'; button.append(image, label); button.addEventListener('click', () => chooseMedia(item.url)); return button; }
-  function renderBreadcrumb() { breadcrumb.replaceChildren(); const root = document.createElement('button'); root.type = 'button'; root.className = 'font-bold text-teal-700 hover:underline'; root.textContent = 'Ổ đĩa của tôi'; root.addEventListener('click', () => openFolder(ROOT_FOLDER)); breadcrumb.appendChild(root); let path = ROOT_FOLDER; currentFolder.split(FOLDER_SEPARATOR).filter(Boolean).forEach((segment) => { path = path ? path + FOLDER_SEPARATOR + segment : segment; const separator = document.createElement('span'); separator.textContent = '›'; const button = document.createElement('button'); button.type = 'button'; button.textContent = segment; button.className = 'font-semibold text-zinc-700 hover:underline'; const target = path; button.addEventListener('click', () => openFolder(target)); breadcrumb.append(separator, button); }); }
-  function renderTree() { tree.replaceChildren(); const treeFolders = [ROOT_FOLDER, ...folders]; treeFolders.forEach((folder) => { let parent = parentFolder(folder); let visible = folder === ROOT_FOLDER; if (folder !== ROOT_FOLDER) { visible = expandedFolders.has(ROOT_TREE_KEY); while (visible && parent) { visible = expandedFolders.has(parent); parent = parentFolder(parent); } } if (!visible) return; const entry = document.createElement('div'); entry.className = 'picker-tree-entry'; entry.style.setProperty('--picker-depth', String(folder ? folder.split(FOLDER_SEPARATOR).length : 0)); const children = folders.some((candidate) => parentFolder(candidate) === folder); const toggle = document.createElement('button'); toggle.type = 'button'; toggle.className = 'picker-tree-toggle' + (children ? '' : ' invisible'); toggle.setAttribute('aria-label', 'Thu gọn hoặc mở rộng ' + (folderLabel(folder) || 'Ổ đĩa của tôi')); const expanded = expandedFolders.has(treeKey(folder)); toggle.setAttribute('aria-expanded', String(expanded)); toggle.classList.toggle('is-expanded', expanded); toggle.innerHTML = '<svg aria-hidden="true" viewBox="0 0 16 16"><path d="m5 3 5 5-5 5"/></svg>'; toggle.addEventListener('click', () => { const key = treeKey(folder); if (expandedFolders.has(key)) expandedFolders.delete(key); else expandedFolders.add(key); persistTreeState(); renderTree(); }); const button = createFolderButton(folder, 'picker-tree-row'); button.querySelector('span')!.textContent = folder ? folderLabel(folder) : 'Ổ đĩa của tôi'; button.classList.toggle('is-active', folder === currentFolder); entry.append(toggle, button); tree.appendChild(entry); }); }
-  function openFolder(folder: string) { currentFolder = folder; expandAncestors(folder); folderGrid.replaceChildren(); grid.replaceChildren(); const children = folders.filter((candidate) => parentFolder(candidate) === folder); const images = mediaItems.filter((item) => (item.folder || ROOT_FOLDER) === folder && item.type.startsWith('image/')); children.forEach((child) => folderGrid.appendChild(createFolderButton(child, 'picker-folder-tile'))); images.forEach((item) => grid.appendChild(createImageCard(item))); emptyState.classList.toggle(HIDDEN_CLASS, Boolean(children.length || images.length)); message.textContent = `${children.length} thư mục · ${images.length} ảnh`; renderBreadcrumb(); renderTree(); }
-  async function loadLibrary() { message.textContent = LOADING_MESSAGE; const response = await fetch(MEDIA_API_URL); const data = await response.json(); if (!response.ok) { message.textContent = data.message; toast(data.message, 'error'); return; } folders = data.folders; mediaItems = data.media; if (currentFolder && !folders.includes(currentFolder)) currentFolder = ROOT_FOLDER; openFolder(currentFolder); }
-  async function openPicker(nextMode: string) { mode = nextMode; returnFocus = document.activeElement as HTMLElement; modal.classList.remove(HIDDEN_CLASS); await loadLibrary(); document.querySelector('#close-media-picker')?.focus(); }
-  document.querySelector('#open-cover-media')?.addEventListener('click', () => openPicker(COVER_MODE)); document.querySelector('#close-media-picker')?.addEventListener('click', closePicker); modal.addEventListener('click', (event) => { if (event.target === modal) closePicker(); }); document.addEventListener('keydown', (event) => { if (event.key === ESCAPE_KEY && !modal.classList.contains(HIDDEN_CLASS)) closePicker(); }); window.addEventListener('media:open-content', () => openPicker(CONTENT_MODE));
-  uploadButton.addEventListener('click', async () => { const file = uploadInput.files?.[0]; if (!file) { message.textContent = 'Vui lòng chọn một tệp ảnh.'; toast(message.textContent, 'error'); uploadInput.focus(); return; } const uploadData = new FormData(); uploadData.append('file', file); uploadData.append('folder', currentFolder); uploadButton.disabled = true; message.textContent = UPLOADING_MESSAGE; try { const response = await fetch(MEDIA_API_URL, { method: POST_METHOD, body: uploadData }); const data = await response.json(); if (!response.ok) throw new Error(data.message); uploadInput.value = ''; await loadLibrary(); message.textContent = UPLOAD_SUCCESS_MESSAGE; toast('Tải ảnh lên thành công.', 'success'); } catch (error: any) { message.textContent = error.message; toast(error.message, 'error'); } finally { uploadButton.disabled = false; } });
+  function persistTreeState() {
+    sessionStorage.setItem(TREE_STATE_KEY, JSON.stringify([...expandedFolders]));
+  }
+  function expandAncestors(folder: string) {
+    expandedFolders.add(ROOT_TREE_KEY);
+    let parent = parentFolder(folder);
+    while (parent) {
+      expandedFolders.add(parent);
+      parent = parentFolder(parent);
+    }
+    persistTreeState();
+  }
+  function closePicker() {
+    modal.classList.add(HIDDEN_CLASS);
+    returnFocus?.focus();
+  }
+  function selectCover(url: string) {
+    const input = document.querySelector('#cover_image') as HTMLInputElement;
+    const preview = document.querySelector('#cover-preview-img') as HTMLImageElement;
+    input.value = url;
+    preview.src = url;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  function insertContentImage(url: string) {
+    const editor = document.querySelector('#content') as HTMLTextAreaElement;
+    editor.setRangeText(
+      '![' + IMAGE_ALT_TEXT + '](' + url + ')',
+      editor.selectionStart,
+      editor.selectionEnd,
+      'end'
+    );
+    editor.focus();
+  }
+  function chooseMedia(url: string) {
+    if (mode === CONTENT_MODE) insertContentImage(url);
+    else selectCover(url);
+    closePicker();
+  }
+  function createFolderButton(folder: string, className: string) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = className;
+    button.dataset.folder = folder;
+    button.innerHTML =
+      '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-10Z"/></svg><span></span>';
+    button.querySelector('span')!.textContent = folderLabel(folder);
+    button.addEventListener('click', () => openFolder(folder));
+    return button;
+  }
+  function createImageCard(item: (typeof mediaItems)[number]) {
+    const button = document.createElement('button');
+    const image = document.createElement('img');
+    const label = document.createElement('span');
+    button.type = 'button';
+    button.className =
+      'overflow-hidden rounded-xl border border-zinc-200 bg-white text-left transition hover:border-teal-500 hover:ring-2 hover:ring-teal-100';
+    image.src = item.url;
+    image.alt = '';
+    image.className = 'aspect-video w-full object-cover';
+    label.textContent = item.originalName || item.filename;
+    label.className = 'block truncate p-2 text-xs font-semibold text-zinc-700';
+    button.append(image, label);
+    button.addEventListener('click', () => chooseMedia(item.url));
+    return button;
+  }
+  function renderBreadcrumb() {
+    breadcrumb.replaceChildren();
+    const root = document.createElement('button');
+    root.type = 'button';
+    root.className = 'font-bold text-teal-700 hover:underline';
+    root.textContent = 'Ổ đĩa của tôi';
+    root.addEventListener('click', () => openFolder(ROOT_FOLDER));
+    breadcrumb.appendChild(root);
+    let path = ROOT_FOLDER;
+    currentFolder
+      .split(FOLDER_SEPARATOR)
+      .filter(Boolean)
+      .forEach((segment) => {
+        path = path ? path + FOLDER_SEPARATOR + segment : segment;
+        const separator = document.createElement('span');
+        separator.textContent = '›';
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = segment;
+        button.className = 'font-semibold text-zinc-700 hover:underline';
+        const target = path;
+        button.addEventListener('click', () => openFolder(target));
+        breadcrumb.append(separator, button);
+      });
+  }
+  function renderTree() {
+    tree.replaceChildren();
+    const treeFolders = [ROOT_FOLDER, ...folders];
+    treeFolders.forEach((folder) => {
+      let parent = parentFolder(folder);
+      let visible = folder === ROOT_FOLDER;
+      if (folder !== ROOT_FOLDER) {
+        visible = expandedFolders.has(ROOT_TREE_KEY);
+        while (visible && parent) {
+          visible = expandedFolders.has(parent);
+          parent = parentFolder(parent);
+        }
+      }
+      if (!visible) return;
+      const entry = document.createElement('div');
+      entry.className = 'picker-tree-entry';
+      entry.style.setProperty(
+        '--picker-depth',
+        String(folder ? folder.split(FOLDER_SEPARATOR).length : 0)
+      );
+      const children = folders.some((candidate) => parentFolder(candidate) === folder);
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'picker-tree-toggle' + (children ? '' : ' invisible');
+      toggle.setAttribute(
+        'aria-label',
+        'Thu gọn hoặc mở rộng ' + (folderLabel(folder) || 'Ổ đĩa của tôi')
+      );
+      const expanded = expandedFolders.has(treeKey(folder));
+      toggle.setAttribute('aria-expanded', String(expanded));
+      toggle.classList.toggle('is-expanded', expanded);
+      toggle.innerHTML =
+        '<svg aria-hidden="true" viewBox="0 0 16 16"><path d="m5 3 5 5-5 5"/></svg>';
+      toggle.addEventListener('click', () => {
+        const key = treeKey(folder);
+        if (expandedFolders.has(key)) expandedFolders.delete(key);
+        else expandedFolders.add(key);
+        persistTreeState();
+        renderTree();
+      });
+      const button = createFolderButton(folder, 'picker-tree-row');
+      button.querySelector('span')!.textContent = folder ? folderLabel(folder) : 'Ổ đĩa của tôi';
+      button.classList.toggle('is-active', folder === currentFolder);
+      entry.append(toggle, button);
+      tree.appendChild(entry);
+    });
+  }
+  function openFolder(folder: string) {
+    currentFolder = folder;
+    expandAncestors(folder);
+    folderGrid.replaceChildren();
+    grid.replaceChildren();
+    const children = folders.filter((candidate) => parentFolder(candidate) === folder);
+    const images = mediaItems.filter(
+      (item) => (item.folder || ROOT_FOLDER) === folder && item.type.startsWith('image/')
+    );
+    children.forEach((child) =>
+      folderGrid.appendChild(createFolderButton(child, 'picker-folder-tile'))
+    );
+    images.forEach((item) => grid.appendChild(createImageCard(item)));
+    emptyState.classList.toggle(HIDDEN_CLASS, Boolean(children.length || images.length));
+    message.textContent = `${children.length} thư mục · ${images.length} ảnh`;
+    renderBreadcrumb();
+    renderTree();
+  }
+  async function loadLibrary() {
+    message.textContent = LOADING_MESSAGE;
+    const response = await fetch(MEDIA_API_URL);
+    const data = await response.json();
+    if (!response.ok) {
+      message.textContent = data.message;
+      toast(data.message, 'error');
+      return;
+    }
+    folders = data.folders;
+    mediaItems = data.media;
+    if (currentFolder && !folders.includes(currentFolder)) currentFolder = ROOT_FOLDER;
+    openFolder(currentFolder);
+  }
+  async function openPicker(nextMode: string) {
+    mode = nextMode;
+    returnFocus = document.activeElement as HTMLElement;
+    modal.classList.remove(HIDDEN_CLASS);
+    await loadLibrary();
+    document.querySelector<HTMLElement>('#close-media-picker')?.focus();
+  }
+  document
+    .querySelector('#open-cover-media')
+    ?.addEventListener('click', () => openPicker(COVER_MODE));
+  document.querySelector('#close-media-picker')?.addEventListener('click', closePicker);
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) closePicker();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === ESCAPE_KEY && !modal.classList.contains(HIDDEN_CLASS)) closePicker();
+  });
+  window.addEventListener('media:open-content', () => openPicker(CONTENT_MODE));
+  uploadButton.addEventListener('click', async () => {
+    const file = uploadInput.files?.[0];
+    if (!file) {
+      message.textContent = 'Vui lòng chọn một tệp ảnh.';
+      toast(message.textContent, 'error');
+      uploadInput.focus();
+      return;
+    }
+    const uploadData = new FormData();
+    uploadData.append('file', file);
+    uploadData.append('folder', currentFolder);
+    uploadButton.disabled = true;
+    message.textContent = UPLOADING_MESSAGE;
+    try {
+      const response = await fetch(MEDIA_API_URL, { method: POST_METHOD, body: uploadData });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message);
+      uploadInput.value = '';
+      await loadLibrary();
+      message.textContent = UPLOAD_SUCCESS_MESSAGE;
+      toast('Tải ảnh lên thành công.', 'success');
+    } catch (error: any) {
+      message.textContent = error.message;
+      toast(error.message, 'error');
+    } finally {
+      uploadButton.disabled = false;
+    }
+  });
 </script>
 
 <style>
-  :global(.picker-tree-entry) { display:flex; width:100%; min-width:0; align-items:center; padding-left:calc(var(--picker-depth, 0) * .75rem); }
-  :global(.picker-tree-row) { display:flex; min-width:0; flex:1; align-items:center; gap:.55rem; border-radius:var(--retro-radius); padding:.55rem .35rem; color:#52525b; text-align:left; font-size:.72rem; font-weight:700; }
-  :global(.picker-tree-toggle) { display:grid; width:1.65rem; height:1.65rem; flex:none; place-items:center; border-radius:var(--retro-radius); color:#71717a; }
-  :global(.picker-tree-toggle:hover) { background:#e4e4e7; }
-  :global(.picker-tree-toggle svg) { width:.75rem; height:.75rem; fill:none; stroke:currentColor; stroke-width:2; transition:transform .15s; }
-  :global(.picker-tree-toggle.is-expanded svg) { transform:rotate(90deg); }
-  :global(.picker-tree-row:hover), :global(.picker-tree-row.is-active) { background:#cffafe; color:#155e75; }
-  :global(.picker-tree-row svg), :global(.picker-folder-tile svg) { width:1rem; height:1rem; flex:none; fill:currentColor; }
-  :global(.picker-folder-tile) { display:flex; align-items:center; gap:.65rem; border:2px solid #d4d4d8; border-radius:var(--retro-radius); background:#fafafa; padding:.75rem .9rem; color:#27272a; text-align:left; font-size:.75rem; font-weight:800; }
-  :global(.picker-folder-tile:hover) { border-color:#67e8f9; background:#ecfeff; color:#155e75; }
+  :global(.picker-tree-entry) {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    padding-left: calc(var(--picker-depth, 0) * 0.75rem);
+  }
+  :global(.picker-tree-row) {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+    gap: 0.55rem;
+    border-radius: var(--retro-radius);
+    padding: 0.55rem 0.35rem;
+    color: #52525b;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+  :global(.picker-tree-toggle) {
+    display: grid;
+    width: 1.65rem;
+    height: 1.65rem;
+    flex: none;
+    place-items: center;
+    border-radius: var(--retro-radius);
+    color: #71717a;
+  }
+  :global(.picker-tree-toggle:hover) {
+    background: #e4e4e7;
+  }
+  :global(.picker-tree-toggle svg) {
+    width: 0.75rem;
+    height: 0.75rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    transition: transform 0.15s;
+  }
+  :global(.picker-tree-toggle.is-expanded svg) {
+    transform: rotate(90deg);
+  }
+  :global(.picker-tree-row:hover),
+  :global(.picker-tree-row.is-active) {
+    background: #cffafe;
+    color: #155e75;
+  }
+  :global(.picker-tree-row svg),
+  :global(.picker-folder-tile svg) {
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+    fill: currentColor;
+  }
+  :global(.picker-folder-tile) {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    border: 2px solid #d4d4d8;
+    border-radius: var(--retro-radius);
+    background: #fafafa;
+    padding: 0.75rem 0.9rem;
+    color: #27272a;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 800;
+  }
+  :global(.picker-folder-tile:hover) {
+    border-color: #67e8f9;
+    background: #ecfeff;
+    color: #155e75;
+  }
 </style>

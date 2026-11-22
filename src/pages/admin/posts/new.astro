@@ -1,14 +1,13 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { dbService } from '../../../lib/db';
+import { categoryService, settingService } from '../../../api';
 import MediaPicker from '../../../components/MediaPicker.astro';
 
-const categories = dbService.getCategories();
-const settings = dbService.getSettings();
+const categories = await categoryService.getCategories();
+const settings = await settingService.getSettings();
 ---
 
 <AdminLayout title="Tạo bài viết mới" activeNav="new-post">
-  
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/60">
     <div>
       <h2 class="text-base font-bold text-slate-900 tracking-tight">Soạn thảo bài viết mới</h2>
@@ -16,19 +15,24 @@ const settings = dbService.getSettings();
     </div>
 
     <div class="admin-sticky-actions flex items-center gap-2">
-      <a 
-        href="/admin/posts" 
+      <a
+        href="/admin/posts"
         class="px-3.5 py-1.5 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-medium transition-colors"
       >
         Hủy
       </a>
-      <button 
-        type="button" 
+      <button
+        type="button"
         id="save-post-btn"
         class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
       >
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+          ></path>
         </svg>
         <span id="save-btn-text">Lưu bài viết</span>
       </button>
@@ -36,22 +40,20 @@ const settings = dbService.getSettings();
   </div>
 
   <form id="post-form" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    
     <!-- Left Column: Main Editor (2 cols) -->
     <div class="lg:col-span-2 space-y-6">
-      
       <!-- Title & Excerpt Card -->
       <div class="bg-white rounded-xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
         <div>
           <label for="title" class="block text-xs font-semibold text-slate-700 mb-1.5">
             Tiêu đề bài viết <span class="text-red-500">*</span>
           </label>
-          <input 
-            type="text" 
-            id="title" 
-            name="title" 
-            required 
-            placeholder="Nhập tiêu đề bài viết công nghệ..." 
+          <input
+            type="text"
+            id="title"
+            name="title"
+            required
+            placeholder="Nhập tiêu đề bài viết công nghệ..."
             class="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-sm font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
           />
         </div>
@@ -67,11 +69,11 @@ const settings = dbService.getSettings();
             <span class="px-3 py-2 bg-slate-100 border border-r-0 border-slate-200 rounded-l-lg text-xs text-slate-500 font-mono">
               /blog/
             </span>
-            <input 
-              type="text" 
-              id="slug" 
-              name="slug" 
-              placeholder="duong-dan-bai-viet" 
+            <input
+              type="text"
+              id="slug"
+              name="slug"
+              placeholder="duong-dan-bai-viet"
               class="w-full px-3 py-2 bg-slate-50/60 border border-slate-200 rounded-r-lg text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
             />
           </div>
@@ -81,11 +83,11 @@ const settings = dbService.getSettings();
           <label for="excerpt" class="block text-xs font-semibold text-slate-700 mb-1.5">
             Tóm tắt ngắn (Excerpt)
           </label>
-          <textarea 
-            id="excerpt" 
-            name="excerpt" 
-            rows="2" 
-            placeholder="Mô tả tóm tắt nội dung bài viết..." 
+          <textarea
+            id="excerpt"
+            name="excerpt"
+            rows="2"
+            placeholder="Mô tả tóm tắt nội dung bài viết..."
             class="w-full px-3.5 py-2 bg-slate-50/60 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
           ></textarea>
         </div>
@@ -93,22 +95,20 @@ const settings = dbService.getSettings();
 
       <!-- Markdown Content Editor Card -->
       <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col">
-        
         <!-- Editor Header & Toolbar -->
         <div class="px-4 py-2.5 bg-slate-50/80 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
-          
           <!-- Mode Tabs -->
           <div class="flex items-center bg-slate-200/70 p-0.5 rounded-lg text-xs font-semibold">
-            <button 
-              type="button" 
-              id="tab-edit" 
+            <button
+              type="button"
+              id="tab-edit"
               class="px-3 py-1 rounded-md bg-white text-slate-900 shadow-2xs cursor-pointer transition-all"
             >
               Soạn thảo
             </button>
-            <button 
-              type="button" 
-              id="tab-preview" 
+            <button
+              type="button"
+              id="tab-preview"
               class="px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 cursor-pointer transition-all"
             >
               Xem trước
@@ -117,41 +117,103 @@ const settings = dbService.getSettings();
 
           <!-- Markdown quick buttons -->
           <div id="toolbar-actions" class="flex items-center gap-1">
-            <button type="button" data-syntax="**" class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs font-bold cursor-pointer transition-colors" title="In đậm">B</button>
-            <button type="button" data-syntax="*" class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs italic font-serif cursor-pointer transition-colors" title="In nghiêng">I</button>
-            <button type="button" data-prefix="## " class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs font-semibold cursor-pointer transition-colors" title="Tiêu đề H2">H2</button>
-            <button type="button" data-prefix="### " class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs font-semibold cursor-pointer transition-colors" title="Tiêu đề H3">H3</button>
-            <button type="button" data-prefix="> " class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs cursor-pointer transition-colors" title="Trích dẫn">Quote</button>
-            <button type="button" data-wrap="```\n" data-wrap-end="\n```" class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs font-mono cursor-pointer transition-colors" title="Khối mã">{"{ code }"}</button>
-            <button type="button" data-syntax="link" class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs cursor-pointer transition-colors" title="Chèn liên kết">Link</button>
-            <button type="button" data-syntax="img" class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs cursor-pointer transition-colors" title="Chèn ảnh">Img</button>
-            <button type="button" data-prefix="- " class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs cursor-pointer transition-colors" title="Danh sách">• List</button>
+            <button
+              type="button"
+              data-syntax="**"
+              class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs font-bold cursor-pointer transition-colors"
+              title="In đậm"
+            >
+              B
+            </button>
+            <button
+              type="button"
+              data-syntax="*"
+              class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs italic font-serif cursor-pointer transition-colors"
+              title="In nghiêng"
+            >
+              I
+            </button>
+            <button
+              type="button"
+              data-prefix="## "
+              class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs font-semibold cursor-pointer transition-colors"
+              title="Tiêu đề H2"
+            >
+              H2
+            </button>
+            <button
+              type="button"
+              data-prefix="### "
+              class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs font-semibold cursor-pointer transition-colors"
+              title="Tiêu đề H3"
+            >
+              H3
+            </button>
+            <button
+              type="button"
+              data-prefix="> "
+              class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs cursor-pointer transition-colors"
+              title="Trích dẫn"
+            >
+              Quote
+            </button>
+            <button
+              type="button"
+              data-wrap="```\n"
+              data-wrap-end="\n```"
+              class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs font-mono cursor-pointer transition-colors"
+              title="Khối mã"
+            >
+              {'{ code }'}
+            </button>
+            <button
+              type="button"
+              data-syntax="link"
+              class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs cursor-pointer transition-colors"
+              title="Chèn liên kết"
+            >
+              Link
+            </button>
+            <button
+              type="button"
+              data-syntax="img"
+              class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs cursor-pointer transition-colors"
+              title="Chèn ảnh"
+            >
+              Img
+            </button>
+            <button
+              type="button"
+              data-prefix="- "
+              class="tool-btn px-2.5 py-1 text-slate-600 hover:text-blue-600 hover:bg-slate-200/70 rounded-md text-xs cursor-pointer transition-colors"
+              title="Danh sách"
+            >
+              • List
+            </button>
           </div>
-
         </div>
 
         <!-- Textarea / Preview Container -->
         <div class="p-4 sm:p-5 flex-1">
-          <textarea 
-            id="content" 
-            name="content" 
-            rows="18" 
-            required 
-            placeholder="# Soạn nội dung bằng Markdown tại đây..." 
+          <textarea
+            id="content"
+            name="content"
+            rows="18"
+            required
+            placeholder="# Soạn nội dung bằng Markdown tại đây..."
             class="w-full p-2 font-mono text-xs sm:text-sm text-slate-800 bg-white border-0 focus:outline-none resize-y min-h-[380px] leading-relaxed"
           ></textarea>
 
-          <div id="preview-container" class="hidden min-h-[380px] p-6 bg-slate-50/50 prose prose-slate max-w-none border border-slate-100 rounded-lg">
-          </div>
+          <div
+            id="preview-container"
+            class="hidden min-h-[380px] p-6 bg-slate-50/50 prose prose-slate max-w-none border border-slate-100 rounded-lg"
+          ></div>
         </div>
-
       </div>
-
     </div>
 
     <!-- Right Column: Settings & Metadata (1 col) -->
     <div class="space-y-6">
-      
       <!-- Publish Status Card -->
       <div class="bg-white rounded-xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2.5">
@@ -162,13 +224,15 @@ const settings = dbService.getSettings();
           <label for="status" class="block text-xs font-semibold text-slate-700 mb-1.5">
             Trạng thái
           </label>
-          <select 
-            id="status" 
-            name="status" 
+          <select
+            id="status"
+            name="status"
             class="w-full px-3 py-2 bg-slate-50/60 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all cursor-pointer"
           >
             <option value="published">Xuất bản công khai</option>
-            <option value="draft" selected>Lưu bản nháp</option>
+            <option value="draft" selected>
+              Lưu bản nháp
+            </option>
           </select>
         </div>
 
@@ -176,9 +240,9 @@ const settings = dbService.getSettings();
           <label for="category" class="block text-xs font-semibold text-slate-700 mb-1.5">
             Chuyên mục
           </label>
-          <select 
-            id="category" 
-            name="category" 
+          <select
+            id="category"
+            name="category"
             class="w-full px-3 py-2 bg-slate-50/60 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all cursor-pointer"
           >
             {categories.map((cat) => (
@@ -191,11 +255,11 @@ const settings = dbService.getSettings();
           <label for="author" class="block text-xs font-semibold text-slate-700 mb-1.5">
             Tác giả
           </label>
-          <input 
-            type="text" 
-            id="author" 
-            name="author" 
-            value={settings.author_name || 'Admin'} 
+          <input
+            type="text"
+            id="author"
+            name="author"
+            value={settings.author_name || 'Admin'}
             class="w-full px-3 py-2 bg-slate-50/60 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
           />
         </div>
@@ -204,15 +268,14 @@ const settings = dbService.getSettings();
           <label for="tags" class="block text-xs font-semibold text-slate-700 mb-1.5">
             Thẻ (Tags)
           </label>
-          <input 
-            type="text" 
-            id="tags" 
-            name="tags" 
-            placeholder="astro, webdev, sqlite (cách nhau dấu phẩy)" 
+          <input
+            type="text"
+            id="tags"
+            name="tags"
+            placeholder="astro, webdev, sqlite (cách nhau dấu phẩy)"
             class="w-full px-3 py-2 bg-slate-50/60 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
           />
         </div>
-
       </div>
 
       <!-- Cover Image Card -->
@@ -226,11 +289,11 @@ const settings = dbService.getSettings();
           <label for="cover_image" class="block text-xs font-semibold text-slate-700 mb-1.5">
             Hoặc dùng URL ảnh bên ngoài
           </label>
-          <input 
+          <input
             type="text"
             inputmode="url"
-            id="cover_image" 
-            name="cover_image" 
+            id="cover_image"
+            name="cover_image"
             value="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&auto=format&fit=crop&q=80"
             class="w-full px-3 py-2 bg-slate-50/60 border border-slate-200 rounded-lg text-[11px] font-mono text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
           />
@@ -239,19 +302,16 @@ const settings = dbService.getSettings();
         <div>
           <span class="text-[11px] text-slate-500 mb-1.5 block">Xem trước ảnh:</span>
           <div class="aspect-video rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
-            <img 
-              id="cover-preview-img" 
-              src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&auto=format&fit=crop&q=80" 
-              alt="Cover Preview" 
+            <img
+              id="cover-preview-img"
+              src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&auto=format&fit=crop&q=80"
+              alt="Cover Preview"
               class="w-full h-full object-cover"
             />
           </div>
         </div>
-
       </div>
-
     </div>
-
   </form>
 
   <script>
@@ -270,7 +330,8 @@ const settings = dbService.getSettings();
     const saveBtn = document.getElementById('save-post-btn') as HTMLButtonElement;
     const saveBtnText = document.getElementById('save-btn-text') as HTMLSpanElement;
     const REDIRECT_DELAY_MS = 600;
-    const toast = (message: string, type: 'success' | 'error' | 'info' = 'info') => (window as any).showAdminToast?.(message, type);
+    const toast = (message: string, type: 'success' | 'error' | 'info' = 'info') =>
+      (window as any).showAdminToast?.(message, type);
 
     // Auto-slug generation
     titleInput?.addEventListener('input', () => {
@@ -380,18 +441,19 @@ const settings = dbService.getSettings();
         const resData = await res.json();
         if (res.ok && resData.success) {
           toast('Đã tạo bài viết thành công.', 'success');
-          window.setTimeout(() => { window.location.href = '/admin/posts'; }, REDIRECT_DELAY_MS);
+          window.setTimeout(() => {
+            window.location.href = '/admin/posts';
+          }, REDIRECT_DELAY_MS);
         } else {
           toast(resData.message || 'Lỗi khi tạo bài viết.', 'error');
           saveBtn.disabled = false;
           saveBtnText.textContent = 'Lưu bài viết';
         }
-      } catch (err) {
+      } catch {
         toast('Lỗi kết nối khi lưu bài viết.', 'error');
         saveBtn.disabled = false;
         saveBtnText.textContent = 'Lưu bài viết';
       }
     });
   </script>
-
 </AdminLayout>

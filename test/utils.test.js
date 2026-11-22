@@ -6,7 +6,10 @@ test('Utility: slugify should convert Vietnamese text to clean URL slug', () => 
   assert.equal(slugify('Lập trình Web hiện đại 2026'), 'lap-trinh-web-hien-dai-2026');
   assert.equal(slugify('Điện toán đám mây & AI!'), 'dien-toan-dam-may-ai');
   assert.equal(slugify('Đà Nẵng & Hà Nội & TP. Hồ Chí Minh'), 'da-nang-ha-noi-tp-ho-chi-minh');
-  assert.equal(slugify('   ---Multiple---Spaces   and---Dashes---  '), 'multiple-spaces-and-dashes');
+  assert.equal(
+    slugify('   ---Multiple---Spaces   and---Dashes---  '),
+    'multiple-spaces-and-dashes'
+  );
   assert.equal(slugify(''), '');
 });
 
@@ -27,9 +30,10 @@ test('Utility: calculateReadingTime should estimate reading minutes', () => {
 });
 
 test('Utility: renderMarkdown should render markdown to HTML', () => {
-  const md = '# Tiêu đề bài viết\n\n**Chữ đậm** và *chữ nghiêng*.\n\n```js\nconsole.log("Astro");\n```';
+  const md =
+    '# Tiêu đề bài viết\n\n**Chữ đậm** và *chữ nghiêng*.\n\n```js\nconsole.log("Astro");\n```';
   const html = renderMarkdown(md);
-  
+
   assert.match(html, /<h1.*>Tiêu đề bài viết<\/h1>/);
   assert.match(html, /<strong>Chữ đậm<\/strong>/);
   assert.match(html, /<em>chữ nghiêng<\/em>/);

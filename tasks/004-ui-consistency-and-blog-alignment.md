@@ -35,12 +35,12 @@ Retro square uses a subtle shared radius. Discovery content remains useful below
 
 ## Test report
 
-| Check | Status | Evidence / reason |
-| --- | --- | --- |
-| Geometry/alignment regression | PASS | `node --test test/retro-ui.test.js`; shared token/rail and removal of the old 12-column sidebar are asserted. |
-| Build | PASS | `pnpm build`. |
-| Full suite | FAIL | 12/13 test files passed. Existing access-control fixture expects the currently absent persisted “Chuyên mục” root. |
-| Runtime smoke | NOT RUN | Astro initialized, but sandbox denied binding `127.0.0.1:4321` with `EPERM`. |
+| Check                         | Status  | Evidence / reason                                                                                                  |
+| ----------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
+| Geometry/alignment regression | PASS    | `node --test test/retro-ui.test.js`; shared token/rail and removal of the old 12-column sidebar are asserted.      |
+| Build                         | PASS    | `pnpm build`.                                                                                                      |
+| Full suite                    | FAIL    | 12/13 test files passed. Existing access-control fixture expects the currently absent persisted “Chuyên mục” root. |
+| Runtime smoke                 | NOT RUN | Astro initialized, but sandbox denied binding `127.0.0.1:4321` with `EPERM`.                                       |
 
 ## Blockers
 

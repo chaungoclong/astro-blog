@@ -1,21 +1,23 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { dbService } from '../../../lib/db';
+import { categoryService } from '../../../api';
 
 const INDENT_PX_PER_LEVEL = 20;
 const CHILD_PREFIX = '↳ ';
 
-const rawCategories = dbService.getCategories();
+const rawCategories = await categoryService.getCategories();
 
 /** Build a depth-first ordered flat list so children appear directly below their parent. */
-function buildTreeOrder(categories: typeof rawCategories): (typeof rawCategories[number] & { depth: number })[] {
+function buildTreeOrder(
+  categories: typeof rawCategories
+): ((typeof rawCategories)[number] & { depth: number })[] {
   const childrenMap = new Map<number | null, typeof rawCategories>();
   for (const cat of categories) {
     const key = cat.parent_id;
     if (!childrenMap.has(key)) childrenMap.set(key, []);
     childrenMap.get(key)!.push(cat);
   }
-  const result: (typeof rawCategories[number] & { depth: number })[] = [];
+  const result: ((typeof rawCategories)[number] & { depth: number })[] = [];
   function walk(parentId: number | null, depth: number) {
     const children = childrenMap.get(parentId) || [];
     for (const child of children) {
@@ -30,17 +32,17 @@ function buildTreeOrder(categories: typeof rawCategories): (typeof rawCategories
 const categories = buildTreeOrder(rawCategories);
 
 /** Render indent prefix for the parent select dropdown. */
-const indentLabel = (name: string, depth: number) => depth > 0 ? '— '.repeat(depth) + name : name;
+const indentLabel = (name: string, depth: number) => (depth > 0 ? '— '.repeat(depth) + name : name);
 ---
 
 <AdminLayout title="Quản lý chuyên mục" activeNav="categories">
-  
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    
     <!-- Add Category Form Card (1 col) -->
     <div class="bg-white rounded-xl p-5 border border-zinc-200/90 shadow-2xs h-fit space-y-4">
       <div class="border-b border-zinc-100 pb-3">
-        <h2 id="category-form-title" class="text-sm font-extrabold text-zinc-900 tracking-tight">Thêm chuyên mục mới</h2>
+        <h2 id="category-form-title" class="text-sm font-extrabold text-zinc-900 tracking-tight">
+          Thêm chuyên mục mới
+        </h2>
         <p class="text-[11px] text-zinc-500 mt-0.5">Tạo hoặc chỉnh sửa phân loại bài viết</p>
       </div>
 
@@ -50,27 +52,41 @@ const indentLabel = (name: string, depth: number) => depth > 0 ? '— '.repeat(d
           <label for="cat-name" class="block text-xs font-semibold text-zinc-700 mb-1">
             Tên chuyên mục <span class="text-red-500">*</span>
           </label>
-          <input 
-            type="text" 
-            id="cat-name" 
-            name="name" 
-            required 
-            placeholder="Ví dụ: DevOps & Cloud" 
+          <input
+            type="text"
+            id="cat-name"
+            name="name"
+            required
+            placeholder="Ví dụ: DevOps & Cloud"
             class="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
           />
         </div>
 
-        <div><label for="cat-parent" class="mb-1 block text-xs font-semibold text-zinc-700">Chuyên mục cha</label><select id="cat-parent" name="parent_id" class="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs"><option value="">Cấp cao nhất</option>{categories.map((category) => <option value={category.id}>{indentLabel(category.name, category.depth)}</option>)}</select></div>
+        <div>
+          <label for="cat-parent" class="mb-1 block text-xs font-semibold text-zinc-700">
+            Chuyên mục cha
+          </label>
+          <select
+            id="cat-parent"
+            name="parent_id"
+            class="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs"
+          >
+            <option value="">Cấp cao nhất</option>
+            {categories.map((category) => (
+              <option value={category.id}>{indentLabel(category.name, category.depth)}</option>
+            ))}
+          </select>
+        </div>
 
         <div>
           <label for="cat-slug" class="block text-xs font-semibold text-zinc-700 mb-1">
             Đường dẫn tĩnh (Slug URL)
           </label>
-          <input 
-            type="text" 
-            id="cat-slug" 
-            name="slug" 
-            placeholder="devops-cloud (tự tạo nếu để trống)" 
+          <input
+            type="text"
+            id="cat-slug"
+            name="slug"
+            placeholder="devops-cloud (tự tạo nếu để trống)"
             class="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-mono focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
           />
         </div>
@@ -79,26 +95,38 @@ const indentLabel = (name: string, depth: number) => depth > 0 ? '— '.repeat(d
           <label for="cat-desc" class="block text-xs font-semibold text-zinc-700 mb-1">
             Mô tả chuyên mục
           </label>
-          <textarea 
-            id="cat-desc" 
-            name="description" 
-            rows="3" 
-            placeholder="Mô tả tóm lược chủ đề này..." 
+          <textarea
+            id="cat-desc"
+            name="description"
+            rows="3"
+            placeholder="Mô tả tóm lược chủ đề này..."
             class="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
           ></textarea>
         </div>
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           id="cat-submit-btn"
           class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-2xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            ></path>
           </svg>
           <span id="cat-btn-text">Thêm chuyên mục</span>
         </button>
-        <button id="cat-cancel-edit" type="button" class="admin-secondary-btn w-full" style="display:none">Hủy chỉnh sửa</button>
+        <button
+          id="cat-cancel-edit"
+          type="button"
+          class="admin-secondary-btn w-full"
+          style="display:none"
+        >
+          Hủy chỉnh sửa
+        </button>
       </form>
     </div>
 
@@ -109,7 +137,9 @@ const indentLabel = (name: string, depth: number) => depth > 0 ? '— '.repeat(d
           <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-800">
             Danh sách chuyên mục hiện tại
           </h2>
-          <p class="text-[11px] text-zinc-400 mt-0.5">Tổng cộng {categories.length} chuyên mục bài viết</p>
+          <p class="text-[11px] text-zinc-400 mt-0.5">
+            Tổng cộng {categories.length} chuyên mục bài viết
+          </p>
         </div>
       </div>
 
@@ -127,9 +157,17 @@ const indentLabel = (name: string, depth: number) => depth > 0 ? '— '.repeat(d
             {categories.map((cat) => (
               <tr class="hover:bg-zinc-50/80 transition-colors" data-category-row={cat.id}>
                 <td class="py-3.5 px-5">
-                  <span class="font-bold text-zinc-900 block" style={`padding-left:${cat.depth * INDENT_PX_PER_LEVEL}px`}>{cat.depth > 0 ? CHILD_PREFIX : ''}{cat.name}</span>
+                  <span
+                    class="font-bold text-zinc-900 block"
+                    style={`padding-left:${cat.depth * INDENT_PX_PER_LEVEL}px`}
+                  >
+                    {cat.depth > 0 ? CHILD_PREFIX : ''}
+                    {cat.name}
+                  </span>
                   {cat.description && (
-                    <span class="text-[11px] text-zinc-500 mt-0.5 line-clamp-1">{cat.description}</span>
+                    <span class="text-[11px] text-zinc-500 mt-0.5 line-clamp-1">
+                      {cat.description}
+                    </span>
                   )}
                 </td>
                 <td class="py-3.5 px-4 font-mono text-[11px] text-zinc-500">
@@ -141,35 +179,79 @@ const indentLabel = (name: string, depth: number) => depth > 0 ? '— '.repeat(d
                   </span>
                 </td>
                 <td class="py-3.5 px-5 text-right">
-                  <div class="flex justify-end gap-2"><button type="button" class="edit-cat-btn admin-icon-btn" data-id={cat.id} data-name={cat.name} data-slug={cat.slug} data-description={cat.description || ''} data-parent-id={cat.parent_id || ''}>Sửa</button><button 
-                    type="button" data-id={cat.id} data-name={cat.name} data-post-count={cat.total_post_count || 0}
-                    title={cat.total_post_count ? `Không thể xóa: đang có ${cat.total_post_count} bài viết sử dụng` : 'Xóa chuyên mục'}
-                    disabled={Boolean(cat.total_post_count)}
-                    class="delete-cat-btn admin-icon-btn text-red-700 disabled:cursor-not-allowed disabled:opacity-35"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                    </svg>
-                  </button></div>
+                  <div class="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      class="edit-cat-btn admin-icon-btn"
+                      data-id={cat.id}
+                      data-name={cat.name}
+                      data-slug={cat.slug}
+                      data-description={cat.description || ''}
+                      data-parent-id={cat.parent_id || ''}
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      type="button"
+                      data-id={cat.id}
+                      data-name={cat.name}
+                      data-post-count={cat.total_post_count || 0}
+                      title={
+                        cat.total_post_count
+                          ? `Không thể xóa: đang có ${cat.total_post_count} bài viết sử dụng`
+                          : 'Xóa chuyên mục'
+                      }
+                      disabled={Boolean(cat.total_post_count)}
+                      class="delete-cat-btn admin-icon-btn text-red-700 disabled:cursor-not-allowed disabled:opacity-35"
+                    >
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        ></path>
+                      </svg>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-
     </div>
-
   </div>
 
-  <dialog id="delete-category-dialog" class="m-auto w-[min(28rem,calc(100%-2rem))] rounded-xl border border-slate-200 bg-white p-0 shadow-xl backdrop:bg-slate-900/60 backdrop:backdrop-blur-xs" aria-labelledby="delete-category-title">
+  <dialog
+    id="delete-category-dialog"
+    class="m-auto w-[min(28rem,calc(100%-2rem))] rounded-xl border border-slate-200 bg-white p-0 shadow-xl backdrop:bg-slate-900/60 backdrop:backdrop-blur-xs"
+    aria-labelledby="delete-category-title"
+  >
     <div class="p-6">
-      <p class="text-xs font-semibold uppercase tracking-wider text-red-600">Hành động không thể hoàn tác</p>
-      <h2 id="delete-category-title" class="mt-1 text-base font-bold text-slate-900">Xóa chuyên mục?</h2>
+      <p class="text-xs font-semibold uppercase tracking-wider text-red-600">
+        Hành động không thể hoàn tác
+      </p>
+      <h2 id="delete-category-title" class="mt-1 text-base font-bold text-slate-900">
+        Xóa chuyên mục?
+      </h2>
       <p id="delete-category-message" class="mt-3 text-xs text-slate-600 leading-relaxed"></p>
       <div class="mt-6 flex justify-end gap-2">
-        <button id="cancel-delete-category" type="button" class="admin-secondary-btn">Hủy</button>
-        <button id="confirm-delete-category" type="button" class="admin-primary-btn bg-red-600 hover:bg-red-700">Xóa chuyên mục</button>
+        <button id="cancel-delete-category" type="button" class="admin-secondary-btn">
+          Hủy
+        </button>
+        <button
+          id="confirm-delete-category"
+          type="button"
+          class="admin-primary-btn bg-red-600 hover:bg-red-700"
+        >
+          Xóa chuyên mục
+        </button>
       </div>
     </div>
   </dialog>
@@ -190,8 +272,10 @@ const indentLabel = (name: string, depth: number) => depth > 0 ? '— '.repeat(d
     const deleteDialog = document.getElementById('delete-category-dialog') as HTMLDialogElement;
     const deleteMessage = document.getElementById('delete-category-message') as HTMLElement;
     let pendingDeleteId = '';
-    const toast = (message: string, type: 'success' | 'error' | 'info' = 'info') => (window as any).showAdminToast?.(message, type);
-    const flash = (message: string, type: 'success' | 'error' | 'info' = 'info') => (window as any).setAdminFlash?.(message, type);
+    const toast = (message: string, type: 'success' | 'error' | 'info' = 'info') =>
+      (window as any).showAdminToast?.(message, type);
+    const flash = (message: string, type: 'success' | 'error' | 'info' = 'info') =>
+      (window as any).setAdminFlash?.(message, type);
 
     nameInput?.addEventListener('input', () => {
       if (!slugInput.dataset.manual) {
@@ -220,15 +304,21 @@ const indentLabel = (name: string, depth: number) => depth > 0 ? '— '.repeat(d
       const parent_id = formData.get('parent_id');
 
       try {
-        const res = await fetch(idInput.value ? `/api/categories/${idInput.value}` : '/api/categories', {
-          method: idInput.value ? 'PUT' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, slug, description, parent_id }),
-        });
+        const res = await fetch(
+          idInput.value ? `/api/categories/${idInput.value}` : '/api/categories',
+          {
+            method: idInput.value ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, slug, description, parent_id }),
+          }
+        );
 
         const data = await res.json();
         if (res.ok && data.success) {
-          flash(idInput.value ? 'Đã cập nhật chuyên mục.' : 'Đã thêm chuyên mục thành công.', 'success');
+          flash(
+            idInput.value ? 'Đã cập nhật chuyên mục.' : 'Đã thêm chuyên mục thành công.',
+            'success'
+          );
           window.location.reload();
         } else {
           toast(data.message || 'Lỗi khi thêm chuyên mục.', 'error');
@@ -242,9 +332,29 @@ const indentLabel = (name: string, depth: number) => depth > 0 ? '— '.repeat(d
       }
     });
 
-    const resetForm = () => { form.reset(); idInput.value = ''; slugInput.dataset.manual = ''; formTitle.textContent = 'Thêm chuyên mục mới'; btnText.textContent = 'Thêm chuyên mục'; cancelEdit.style.display = 'none'; };
+    const resetForm = () => {
+      form.reset();
+      idInput.value = '';
+      slugInput.dataset.manual = '';
+      formTitle.textContent = 'Thêm chuyên mục mới';
+      btnText.textContent = 'Thêm chuyên mục';
+      cancelEdit.style.display = 'none';
+    };
     cancelEdit?.addEventListener('click', resetForm);
-    document.querySelectorAll<HTMLButtonElement>('.edit-cat-btn').forEach((button) => button.addEventListener('click', () => { idInput.value = button.dataset.id || ''; nameInput.value = button.dataset.name || ''; slugInput.value = button.dataset.slug || ''; slugInput.dataset.manual = 'true'; descriptionInput.value = button.dataset.description || ''; parentInput.value = button.dataset.parentId || ''; formTitle.textContent = 'Chỉnh sửa chuyên mục'; btnText.textContent = 'Lưu thay đổi'; cancelEdit.style.display = ''; nameInput.focus(); }));
+    document.querySelectorAll<HTMLButtonElement>('.edit-cat-btn').forEach((button) =>
+      button.addEventListener('click', () => {
+        idInput.value = button.dataset.id || '';
+        nameInput.value = button.dataset.name || '';
+        slugInput.value = button.dataset.slug || '';
+        slugInput.dataset.manual = 'true';
+        descriptionInput.value = button.dataset.description || '';
+        parentInput.value = button.dataset.parentId || '';
+        formTitle.textContent = 'Chỉnh sửa chuyên mục';
+        btnText.textContent = 'Lưu thay đổi';
+        cancelEdit.style.display = '';
+        nameInput.focus();
+      })
+    );
 
     document.querySelectorAll('.delete-cat-btn').forEach((btn) => {
       btn.addEventListener('click', async (e) => {
@@ -255,22 +365,23 @@ const indentLabel = (name: string, depth: number) => depth > 0 ? '— '.repeat(d
         deleteDialog.showModal();
       });
     });
-    document.getElementById('cancel-delete-category')?.addEventListener('click', () => deleteDialog.close());
+    document
+      .getElementById('cancel-delete-category')
+      ?.addEventListener('click', () => deleteDialog.close());
     document.getElementById('confirm-delete-category')?.addEventListener('click', async () => {
-        try {
-          const res = await fetch(`/api/categories/${pendingDeleteId}`, { method: 'DELETE' });
-          const data = await res.json();
-          if (res.ok && data.success) {
-            flash('Đã xóa chuyên mục thành công.', 'success');
-            window.location.reload();
-          } else {
-            toast(data.message || 'Lỗi khi xóa chuyên mục.', 'error');
-          }
-        } catch {
-          toast('Lỗi kết nối khi xóa chuyên mục.', 'error');
+      try {
+        const res = await fetch(`/api/categories/${pendingDeleteId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          flash('Đã xóa chuyên mục thành công.', 'success');
+          window.location.reload();
+        } else {
+          toast(data.message || 'Lỗi khi xóa chuyên mục.', 'error');
         }
-        deleteDialog.close();
+      } catch {
+        toast('Lỗi kết nối khi xóa chuyên mục.', 'error');
+      }
+      deleteDialog.close();
     });
   </script>
-
 </AdminLayout>

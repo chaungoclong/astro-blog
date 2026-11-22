@@ -7,6 +7,7 @@ Hệ thống **Blog công nghệ hiện đại tích hợp Trang quản trị n�
 ## 🌟 Tính Năng Nổi Bật
 
 ### 🎨 1. Thiết Kế UI/UX Cao Cấp (Theo skill `ui-ux-pro-max`)
+
 - **Phong cách Swiss Modernism 2.0:** Tỉ lệ tương phản chuẩn WCAG 2.1 AA (>= 4.5:1), hệ thống khoảng trắng toán học, phông chữ tối ưu khả năng đọc.
 - **Thanh tiến độ đọc bài viết (Reading Progress Bar):** Động lực trực quan nằm ở đỉnh trang chi tiết bài viết, tự động tính toán tiến trình cuộn trang.
 - **Mục lục bài viết tự động (Table of Contents - TOC):** Tự động trích xuất các tiêu đề `H2` & `H3` trong bài viết Markdown kèm liên kết neo (anchor links) cuộn mượt.
@@ -15,6 +16,7 @@ Hệ thống **Blog công nghệ hiện đại tích hợp Trang quản trị n�
 - **Hỗ trợ `prefers-reduced-motion`:** Tự động vô hiệu hóa hoạt ảnh nặng khi người dùng bật chế độ giảm chuyển động trong hệ điều hành.
 
 ### 🔍 2. Tối Ưu Hóa SEO Toàn Diện
+
 - **Schema.org JSON-LD có cấu trúc:**
   - `WebSite` Schema kèm `SearchAction` hỗ trợ hộp tìm kiếm trực tiếp trên Google.
   - `BlogPosting` Schema chi tiết trên từng bài viết (tiêu đề, ảnh, ngày tạo, ngày sửa, tác giả, chuyên mục, thẻ tags).
@@ -31,6 +33,7 @@ Hệ thống **Blog công nghệ hiện đại tích hợp Trang quản trị n�
   - Khai báo chỉ thị liên kết tới `Sitemap`.
 
 ### 🧪 3. Bộ Kiểm Thử Tự Động (Automated Test Suite)
+
 - Sử dụng trực tiếp **Node.js Test Runner** (`node:test` + `node:assert`): Không phụ thuộc thư viện bên ngoài, chạy tức thì dưới 300ms.
 - **13 test cases bao phủ đầy đủ các thành phần cốt lõi:**
   - `test/utils.test.js`: Kiểm thử hàm slugify tiếng Việt, format ngày tháng, tính thời gian đọc, render Markdown.
@@ -57,19 +60,23 @@ Hệ thống **Blog công nghệ hiện đại tích hợp Trang quản trị n�
 ## 💻 Hướng Dẫn Sử Dụng & Kiểm Thử
 
 ### 1. Chạy bài kiểm thử (Run Tests)
+
 ```bash
 pnpm test
 # hoặc: npm test
 ```
 
 ### 2. Chạy môi trường phát triển (Development)
+
 ```bash
 pnpm dev
 # hoặc: npm run dev
 ```
+
 Mở trình duyệt truy cập: `http://localhost:4321`
 
 ### 3. Build & Chạy bản Production
+
 ```bash
 pnpm build
 pnpm preview

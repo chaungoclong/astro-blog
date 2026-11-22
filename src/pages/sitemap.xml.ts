@@ -1,13 +1,13 @@
 import type { APIRoute } from 'astro';
-import { dbService } from '../lib/db';
+import { categoryService, pageService, postService } from '../api';
 
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
   const siteUrl = `${url.protocol}//${url.host}`;
 
-  const posts = dbService.getPosts({ status: 'published', limit: 1000 });
-  const categories = dbService.getCategories();
-  const pages = dbService.getPages('published');
+  const posts = await postService.getPosts({ status: 'published', limit: 1000 });
+  const categories = await categoryService.getCategories();
+  const pages = await pageService.getPages('published');
 
   const staticPages = [
     { loc: `${siteUrl}/`, changefreq: 'daily', priority: '1.0' },
@@ -28,8 +28,18 @@ export const GET: APIRoute = async ({ request }) => {
     priority: '0.9',
   }));
 
-  const managedPages = pages.map((page) => ({ loc: `${siteUrl}/${page.slug}`, lastmod: new Date(page.updated_at || page.created_at).toISOString().split('T')[0], changefreq: 'monthly', priority: '0.7' }));
-  const allPages = [...staticPages, ...managedPages, ...categoryPages, ...postPages];
+  const managedPages = pages.map((page) => ({
+    loc: `${siteUrl}/${page.slug}`,
+    lastmod: new Date(page.updated_at || page.created_at).toISOString().split('T')[0],
+    changefreq: 'monthly',
+    priority: '0.7',
+  }));
+  const allPages: Array<{ loc: string; changefreq: string; priority: string; lastmod?: string }> = [
+    ...staticPages,
+    ...managedPages,
+    ...categoryPages,
+    ...postPages,
+  ];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

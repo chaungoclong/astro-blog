@@ -2,7 +2,7 @@
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import '../styles/global.css';
-import { dbService } from '../lib/db';
+import { settingService } from '../api';
 import { generateWebsiteSchema } from '../lib/seo';
 
 interface Props {
@@ -19,16 +19,17 @@ interface Props {
   schema?: string;
 }
 
-const settings = dbService.getSettings();
+const settings = await settingService.getSettings();
 const siteTitle = settings.site_title || 'Astro TechLog';
-const siteDescription = settings.site_description || 'Blog công nghệ hiện đại xây dựng bằng Astro và SQLite nhúng';
+const siteDescription =
+  settings.site_description || 'Blog công nghệ hiện đại xây dựng bằng Astro và SQLite nhúng';
 
-const { 
-  title = siteTitle, 
+const {
+  title = siteTitle,
   description = siteDescription,
   image = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&auto=format&fit=crop&q=80',
   article,
-  schema
+  schema,
 } = Astro.props;
 
 const pageTitle = title === siteTitle ? title : `${title} | ${siteTitle}`;
@@ -49,11 +50,14 @@ const pageSurface = settings.surface_color || '#f8fafc';
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{pageTitle}</title>
-    
+
     <!-- SEO Standard Meta -->
     <meta name="description" content={description} />
     <meta name="author" content={article?.author || settings.author_name || 'Châu Ngọc Long'} />
-    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta
+      name="robots"
+      content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
+    />
     <link rel="canonical" href={canonicalURL} />
     <link rel="sitemap" href="/sitemap.xml" />
 
@@ -68,11 +72,17 @@ const pageSurface = settings.surface_color || '#f8fafc';
 
     {article && (
       <>
-        {article.publishedTime && <meta property="article:published_time" content={article.publishedTime} />}
-        {article.modifiedTime && <meta property="article:modified_time" content={article.modifiedTime} />}
+        {article.publishedTime && (
+          <meta property="article:published_time" content={article.publishedTime} />
+        )}
+        {article.modifiedTime && (
+          <meta property="article:modified_time" content={article.modifiedTime} />
+        )}
         {article.author && <meta property="article:author" content={article.author} />}
         {article.section && <meta property="article:section" content={article.section} />}
-        {article.tags?.map((tag) => <meta property="article:tag" content={tag} />)}
+        {article.tags?.map((tag) => (
+          <meta property="article:tag" content={tag} />
+        ))}
       </>
     )}
 
@@ -84,13 +94,18 @@ const pageSurface = settings.surface_color || '#f8fafc';
 
     <!-- Schema.org JSON-LD -->
     <script type="application/ld+json" set:html={finalSchema} />
-    <style is:inline>{`:root { --brand: ${brand}; --brand-deep: ${brandDeep}; --page-surface: ${pageSurface}; }`}</style>
+    <style
+      is:inline
+      set:html={`:root { --brand: ${brand}; --brand-deep: ${brandDeep}; --page-surface: ${pageSurface}; }`}
+    />
   </head>
-  <body class="min-h-screen flex flex-col selection:bg-[var(--brand,#0f766e)] selection:text-white" style={`background: ${pageSurface}`}>
-    
+  <body
+    class="min-h-screen flex flex-col selection:bg-[var(--brand,#0f766e)] selection:text-white"
+    style={`background: ${pageSurface}`}
+  >
     <!-- Accessibility Skip Link -->
-    <a 
-      href="#main-content" 
+    <a
+      href="#main-content"
       class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-zinc-950 focus:text-white focus:border-2 focus:border-zinc-950 focus:shadow-[3px_3px_0_var(--retro-yellow)] focus:outline-none font-bold text-xs font-mono"
     >
       Chuyển đến nội dung chính
@@ -123,7 +138,7 @@ const pageSurface = settings.surface_color || '#f8fafc';
       // Add copy button to pre blocks
       document.querySelectorAll('pre').forEach((pre) => {
         if (pre.querySelector('.code-copy-btn')) return;
-        
+
         const copyBtn = document.createElement('button');
         copyBtn.className = 'code-copy-btn';
         copyBtn.textContent = 'Copy';
@@ -147,6 +162,5 @@ const pageSurface = settings.surface_color || '#f8fafc';
         pre.appendChild(copyBtn);
       });
     </script>
-
   </body>
 </html>

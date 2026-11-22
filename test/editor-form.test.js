@@ -21,7 +21,7 @@ test('Post editor: MediaPicker must not render a nested form', async () => {
   assert.equal(
     formElements.length,
     0,
-    'MediaPicker is mounted inside the post form and must not contain another form element',
+    'MediaPicker is mounted inside the post form and must not contain another form element'
   );
 });
 
@@ -44,6 +44,6 @@ test('Post editor: imported dependencies must be bundled as a module', async () 
   assert.doesNotMatch(
     source,
     INLINE_IMPORT_PATTERN,
-    'Astro define:vars scripts are inline classic scripts and cannot contain browser imports',
+    'Astro define:vars scripts are inline classic scripts and cannot contain browser imports'
   );
 });

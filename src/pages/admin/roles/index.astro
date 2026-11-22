@@ -1,9 +1,10 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { dbService } from '../../../lib/db';
-const roles = dbService.getRoles();
-const permissions = dbService.getPermissions();
+import { roleService } from '../../../api';
+const roles = await roleService.getRoles();
+const permissions = await roleService.getPermissions();
 ---
+
 <AdminLayout title="Vai trò" activeNav="roles">
   <div class="admin-page-heading">
     <div>
@@ -11,26 +12,45 @@ const permissions = dbService.getPermissions();
       <h2>Vai trò</h2>
       <p>Gom permissions thành vai trò nghiệp vụ rồi gán vai trò cho người dùng.</p>
     </div>
-    <a href="/admin/permissions" class="admin-secondary-btn">Xem permission catalog →</a>
+    <a href="/admin/permissions" class="admin-secondary-btn">
+      Xem permission catalog →
+    </a>
   </div>
 
   <div class="grid gap-6 xl:grid-cols-[28rem_minmax(0,1fr)]">
     <form id="role-form" class="admin-panel h-fit space-y-4 p-5 sm:p-6 xl:sticky xl:top-4">
       <h3 class="text-base font-bold text-slate-900">Tạo vai trò</h3>
-      <label class="admin-field"><span>Tên kỹ thuật <em>*</em></span><input name="name" required pattern="[a-z0-9-]+" placeholder="editor" /></label>
-      <label class="admin-field"><span>Nhãn hiển thị <em>*</em></span><input name="label" required placeholder="Biên tập viên" /></label>
+      <label class="admin-field">
+        <span>
+          Tên kỹ thuật <em>*</em>
+        </span>
+        <input name="name" required pattern="[a-z0-9-]+" placeholder="editor" />
+      </label>
+      <label class="admin-field">
+        <span>
+          Nhãn hiển thị <em>*</em>
+        </span>
+        <input name="label" required placeholder="Biên tập viên" />
+      </label>
       <fieldset>
         <legend class="mb-2 text-xs font-semibold text-slate-700">Permissions</legend>
         <div class="grid gap-1.5">
           {permissions.map((permission) => (
             <label class="flex items-center gap-2 rounded-lg border border-slate-200 p-2.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
-              <input type="checkbox" name="permissions" value={permission} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+              <input
+                type="checkbox"
+                name="permissions"
+                value={permission}
+                class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
               <code class="text-blue-600 font-mono text-[11px]">{permission}</code>
             </label>
           ))}
         </div>
       </fieldset>
-      <button class="admin-primary-btn w-full" type="submit">Tạo vai trò</button>
+      <button class="admin-primary-btn w-full" type="submit">
+        Tạo vai trò
+      </button>
     </form>
 
     <section class="space-y-4">
@@ -46,12 +66,19 @@ const permissions = dbService.getPermissions();
           <div class="mt-4 grid gap-1.5 md:grid-cols-2">
             {permissions.map((permission) => (
               <label class="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/50 p-2.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
-                <input class="role-permission rounded border-slate-300 text-blue-600 focus:ring-blue-500" type="checkbox" value={permission} checked={role.permissions?.includes(permission)} />
+                <input
+                  class="role-permission rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  type="checkbox"
+                  value={permission}
+                  checked={role.permissions?.includes(permission)}
+                />
                 <span class="text-[11px] font-mono">{permission}</span>
               </label>
             ))}
           </div>
-          <button type="button" class="save-role admin-primary-btn mt-4">Lưu vai trò</button>
+          <button type="button" class="save-role admin-primary-btn mt-4">
+            Lưu vai trò
+          </button>
         </article>
       ))}
     </section>
@@ -59,7 +86,8 @@ const permissions = dbService.getPermissions();
 
   <script>
     const JSON_HEADERS = { 'Content-Type': 'application/json' };
-    const toast = (message: string, type: 'success' | 'error' = 'success') => (window as any).showAdminToast?.(message, type);
+    const toast = (message: string, type: 'success' | 'error' = 'success') =>
+      (window as any).showAdminToast?.(message, type);
     const flash = (message: string) => (window as any).setAdminFlash?.(message, 'success');
 
     document.querySelector('#role-form')?.addEventListener('submit', async (event) => {
@@ -70,7 +98,10 @@ const permissions = dbService.getPermissions();
       const response = await fetch('/api/roles', {
         method: 'POST',
         headers: JSON_HEADERS,
-        body: JSON.stringify({ ...Object.fromEntries(data), permissions: data.getAll('permissions') })
+        body: JSON.stringify({
+          ...Object.fromEntries(data),
+          permissions: data.getAll('permissions'),
+        }),
       });
       const result = await response.json();
       if (!response.ok) return toast(result.message, 'error');
@@ -78,16 +109,23 @@ const permissions = dbService.getPermissions();
       location.reload();
     });
 
-    document.querySelectorAll<HTMLButtonElement>('.save-role').forEach(button => button.addEventListener('click', async () => {
-      const card = button.closest<HTMLElement>('.role-card');
-      const permissions = [...(card?.querySelectorAll<HTMLInputElement>('.role-permission:checked') || [])].map(input => input.value);
-      const response = await fetch(`/api/roles/${card?.dataset.roleId}`, {
-        method: 'PUT',
-        headers: JSON_HEADERS,
-        body: JSON.stringify({ permissions })
-      });
-      const result = await response.json();
-      toast(response.ok ? 'Đã cập nhật vai trò.' : result.message, response.ok ? 'success' : 'error');
-    }));
+    document.querySelectorAll<HTMLButtonElement>('.save-role').forEach((button) =>
+      button.addEventListener('click', async () => {
+        const card = button.closest<HTMLElement>('.role-card');
+        const permissions = [
+          ...(card?.querySelectorAll<HTMLInputElement>('.role-permission:checked') || []),
+        ].map((input) => input.value);
+        const response = await fetch(`/api/roles/${card?.dataset.roleId}`, {
+          method: 'PUT',
+          headers: JSON_HEADERS,
+          body: JSON.stringify({ permissions }),
+        });
+        const result = await response.json();
+        toast(
+          response.ok ? 'Đã cập nhật vai trò.' : result.message,
+          response.ok ? 'success' : 'error'
+        );
+      })
+    );
   </script>
 </AdminLayout>

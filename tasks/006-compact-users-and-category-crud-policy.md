@@ -31,13 +31,13 @@ Category writes remain protected by authentication and `categories.manage`; poli
 
 ## Test report
 
-| Check | Status | Evidence / reason |
-| --- | --- | --- |
-| Category policy/unit | PASS | `node --test test/db.test.js`; draft usage blocks delete and rename preserves post assignment; test records cleaned in `finally`. |
-| UI regression | PASS | `node --test test/retro-ui.test.js`; compact form and policy-aware edit/delete controls asserted. |
-| Build | PASS | `pnpm build`. |
-| Full suite | FAIL | 12/13 test files passed. Existing access-control fixture still expects an absent persisted “Chuyên mục” menu root. |
-| Runtime smoke | NOT RUN | Astro initialized; sandbox denied binding `127.0.0.1:4321` with `EPERM`. |
+| Check                | Status  | Evidence / reason                                                                                                                 |
+| -------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Category policy/unit | PASS    | `node --test test/db.test.js`; draft usage blocks delete and rename preserves post assignment; test records cleaned in `finally`. |
+| UI regression        | PASS    | `node --test test/retro-ui.test.js`; compact form and policy-aware edit/delete controls asserted.                                 |
+| Build                | PASS    | `pnpm build`.                                                                                                                     |
+| Full suite           | FAIL    | 12/13 test files passed. Existing access-control fixture still expects an absent persisted “Chuyên mục” menu root.                |
+| Runtime smoke        | NOT RUN | Astro initialized; sandbox denied binding `127.0.0.1:4321` with `EPERM`.                                                          |
 
 ## Blockers
 

@@ -1,22 +1,24 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { dbService } from '../../../lib/db';
+import { settingService } from '../../../api';
 
-const settings = dbService.getSettings();
+const settings = await settingService.getSettings();
 ---
 
 <AdminLayout title="Cài đặt hệ thống" activeNav="settings">
-  
   <div class="max-w-4xl space-y-8">
-    
     <!-- General Settings Card -->
     <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs p-6 sm:p-7 space-y-6">
       <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
         <div>
           <h2 class="text-sm font-bold text-slate-900 tracking-tight">Cấu hình thông tin Blog</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Tiêu đề, khẩu hiệu và thông tin hiển thị của trang web</p>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Tiêu đề, khẩu hiệu và thông tin hiển thị của trang web
+          </p>
         </div>
-        <span class="text-[11px] font-mono font-medium text-slate-400 px-2 py-0.5 rounded bg-slate-100">CONFIG</span>
+        <span class="text-[11px] font-mono font-medium text-slate-400 px-2 py-0.5 rounded bg-slate-100">
+          CONFIG
+        </span>
       </div>
 
       <form id="general-settings-form" class="space-y-5">
@@ -25,12 +27,12 @@ const settings = dbService.getSettings();
             <label for="site_title" class="block text-xs font-semibold text-slate-700 mb-1.5">
               Tên Blog / Website <span class="text-red-500">*</span>
             </label>
-            <input 
-              type="text" 
-              id="site_title" 
-              name="site_title" 
-              required 
-              value={settings.site_title || 'Astro TechLog'} 
+            <input
+              type="text"
+              id="site_title"
+              name="site_title"
+              required
+              value={settings.site_title || 'Astro TechLog'}
               class="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
             />
           </div>
@@ -39,12 +41,12 @@ const settings = dbService.getSettings();
             <label for="author_name" class="block text-xs font-semibold text-slate-700 mb-1.5">
               Tác giả mặc định <span class="text-red-500">*</span>
             </label>
-            <input 
-              type="text" 
-              id="author_name" 
-              name="author_name" 
-              required 
-              value={settings.author_name || 'Châu Ngọc Long'} 
+            <input
+              type="text"
+              id="author_name"
+              name="author_name"
+              required
+              value={settings.author_name || 'Châu Ngọc Long'}
               class="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
             />
           </div>
@@ -54,11 +56,11 @@ const settings = dbService.getSettings();
           <label for="site_subtitle" class="block text-xs font-semibold text-slate-700 mb-1.5">
             Khẩu hiệu (Tagline / Phụ đề)
           </label>
-          <input 
-            type="text" 
-            id="site_subtitle" 
-            name="site_subtitle" 
-            value={settings.site_subtitle || ''} 
+          <input
+            type="text"
+            id="site_subtitle"
+            name="site_subtitle"
+            value={settings.site_subtitle || ''}
             class="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
           />
         </div>
@@ -67,10 +69,10 @@ const settings = dbService.getSettings();
           <label for="site_description" class="block text-xs font-semibold text-slate-700 mb-1.5">
             Mô tả tóm lược Blog (SEO Meta Description)
           </label>
-          <textarea 
-            id="site_description" 
-            name="site_description" 
-            rows="3" 
+          <textarea
+            id="site_description"
+            name="site_description"
+            rows="3"
             class="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
           >{settings.site_description || ''}</textarea>
         </div>
@@ -79,45 +81,88 @@ const settings = dbService.getSettings();
           <label for="posts_per_page" class="block text-xs font-semibold text-slate-700 mb-1.5">
             Số bài viết mỗi trang (Phân trang)
           </label>
-          <input 
-            type="number" 
-            id="posts_per_page" 
-            name="posts_per_page" 
-            min="1" 
-            max="30" 
-            value={settings.posts_per_page || '6'} 
+          <input
+            type="number"
+            id="posts_per_page"
+            name="posts_per_page"
+            min="1"
+            max="30"
+            value={settings.posts_per_page || '6'}
             class="w-32 px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-mono font-medium text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
           />
         </div>
 
         <fieldset class="pt-5 border-t border-slate-100">
-          <legend class="text-xs font-bold uppercase tracking-wider text-slate-800">Bảng màu nhận diện thương hiệu</legend>
-          <p class="text-xs text-slate-500 mt-1 mb-4">Các biến màu áp dụng cho các điểm nhấn của blog công khai.</p>
+          <legend class="text-xs font-bold uppercase tracking-wider text-slate-800">
+            Bảng màu nhận diện thương hiệu
+          </legend>
+          <p class="text-xs text-slate-500 mt-1 mb-4">
+            Các biến màu áp dụng cho các điểm nhấn của blog công khai.
+          </p>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <label class="block text-xs font-semibold text-slate-700">Brand chính
+            <label class="block text-xs font-semibold text-slate-700">
+              Brand chính
               <span class="mt-1.5 flex items-center gap-2">
-                <input type="color" value={settings.brand_color || '#0f766e'} class="h-9 w-11 cursor-pointer rounded-lg border border-slate-200 p-0.5 bg-white" data-color-picker="brand_color" />
-                <input type="text" name="brand_color" value={settings.brand_color || '#0f766e'} pattern="^#[0-9a-fA-F]{6}$" required class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all" />
+                <input
+                  type="color"
+                  value={settings.brand_color || '#0f766e'}
+                  class="h-9 w-11 cursor-pointer rounded-lg border border-slate-200 p-0.5 bg-white"
+                  data-color-picker="brand_color"
+                />
+                <input
+                  type="text"
+                  name="brand_color"
+                  value={settings.brand_color || '#0f766e'}
+                  pattern="^#[0-9a-fA-F]{6}$"
+                  required
+                  class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
+                />
               </span>
             </label>
-            <label class="block text-xs font-semibold text-slate-700">Brand đậm
+            <label class="block text-xs font-semibold text-slate-700">
+              Brand đậm
               <span class="mt-1.5 flex items-center gap-2">
-                <input type="color" value={settings.brand_color_deep || '#115e59'} class="h-9 w-11 cursor-pointer rounded-lg border border-slate-200 p-0.5 bg-white" data-color-picker="brand_color_deep" />
-                <input type="text" name="brand_color_deep" value={settings.brand_color_deep || '#115e59'} pattern="^#[0-9a-fA-F]{6}$" required class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all" />
+                <input
+                  type="color"
+                  value={settings.brand_color_deep || '#115e59'}
+                  class="h-9 w-11 cursor-pointer rounded-lg border border-slate-200 p-0.5 bg-white"
+                  data-color-picker="brand_color_deep"
+                />
+                <input
+                  type="text"
+                  name="brand_color_deep"
+                  value={settings.brand_color_deep || '#115e59'}
+                  pattern="^#[0-9a-fA-F]{6}$"
+                  required
+                  class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
+                />
               </span>
             </label>
-            <label class="block text-xs font-semibold text-slate-700">Nền trang
+            <label class="block text-xs font-semibold text-slate-700">
+              Nền trang
               <span class="mt-1.5 flex items-center gap-2">
-                <input type="color" value={settings.surface_color || '#f8fafc'} class="h-9 w-11 cursor-pointer rounded-lg border border-slate-200 p-0.5 bg-white" data-color-picker="surface_color" />
-                <input type="text" name="surface_color" value={settings.surface_color || '#f8fafc'} pattern="^#[0-9a-fA-F]{6}$" required class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all" />
+                <input
+                  type="color"
+                  value={settings.surface_color || '#f8fafc'}
+                  class="h-9 w-11 cursor-pointer rounded-lg border border-slate-200 p-0.5 bg-white"
+                  data-color-picker="surface_color"
+                />
+                <input
+                  type="text"
+                  name="surface_color"
+                  value={settings.surface_color || '#f8fafc'}
+                  pattern="^#[0-9a-fA-F]{6}$"
+                  required
+                  class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
+                />
               </span>
             </label>
           </div>
         </fieldset>
 
         <div class="pt-2">
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             id="save-general-btn"
             class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg shadow-xs transition-colors cursor-pointer"
           >
@@ -132,9 +177,14 @@ const settings = dbService.getSettings();
       <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
         <div>
           <h2 class="text-sm font-bold text-slate-900 tracking-tight">Bảo mật & Đổi mật khẩu</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Tài khoản quản trị viên: <strong class="text-slate-800 font-medium">{settings.admin_username || 'admin'}</strong></p>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Tài khoản quản trị viên:{' '}
+            <strong class="text-slate-800 font-medium">{settings.admin_username || 'admin'}</strong>
+          </p>
         </div>
-        <span class="text-[11px] font-mono font-medium text-slate-400 px-2 py-0.5 rounded bg-slate-100">AUTH</span>
+        <span class="text-[11px] font-mono font-medium text-slate-400 px-2 py-0.5 rounded bg-slate-100">
+          AUTH
+        </span>
       </div>
 
       <form id="password-form" class="space-y-4 max-w-md">
@@ -142,11 +192,11 @@ const settings = dbService.getSettings();
           <label for="current_password" class="block text-xs font-semibold text-slate-700 mb-1.5">
             Mật khẩu hiện tại <span class="text-red-500">*</span>
           </label>
-          <input 
-            type="password" 
-            id="current_password" 
-            name="current_password" 
-            required 
+          <input
+            type="password"
+            id="current_password"
+            name="current_password"
+            required
             class="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all font-mono"
             placeholder="Mật khẩu hiện tại"
           />
@@ -156,12 +206,12 @@ const settings = dbService.getSettings();
           <label for="new_password" class="block text-xs font-semibold text-slate-700 mb-1.5">
             Mật khẩu mới <span class="text-red-500">*</span>
           </label>
-          <input 
-            type="password" 
-            id="new_password" 
-            name="new_password" 
-            required 
-            minlength="6" 
+          <input
+            type="password"
+            id="new_password"
+            name="new_password"
+            required
+            minlength="6"
             class="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all font-mono"
             placeholder="Tối thiểu 6 ký tự"
           />
@@ -171,19 +221,19 @@ const settings = dbService.getSettings();
           <label for="confirm_password" class="block text-xs font-semibold text-slate-700 mb-1.5">
             Xác nhận mật khẩu mới <span class="text-red-500">*</span>
           </label>
-          <input 
-            type="password" 
-            id="confirm_password" 
-            name="confirm_password" 
-            required 
-            minlength="6" 
+          <input
+            type="password"
+            id="confirm_password"
+            name="confirm_password"
+            required
+            minlength="6"
             class="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all font-mono"
           />
         </div>
 
         <div class="pt-2">
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             id="save-password-btn"
             class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-lg shadow-xs transition-colors cursor-pointer"
           >
@@ -192,7 +242,6 @@ const settings = dbService.getSettings();
         </div>
       </form>
     </div>
-
   </div>
 
   <script>
@@ -200,12 +249,15 @@ const settings = dbService.getSettings();
     const saveGeneralBtn = document.getElementById('save-general-btn') as HTMLButtonElement;
     const passwordForm = document.getElementById('password-form') as HTMLFormElement;
     const savePasswordBtn = document.getElementById('save-password-btn') as HTMLButtonElement;
-    const toast = (message: string, type: 'success' | 'error' | 'info' = 'info') => (window as any).showAdminToast?.(message, type);
+    const toast = (message: string, type: 'success' | 'error' | 'info' = 'info') =>
+      (window as any).showAdminToast?.(message, type);
 
     document.querySelectorAll('[data-color-picker]').forEach((picker) => {
       picker.addEventListener('input', () => {
         const color = picker as HTMLInputElement;
-        const field = generalForm.elements.namedItem(color.dataset.colorPicker || '') as HTMLInputElement;
+        const field = generalForm.elements.namedItem(
+          color.dataset.colorPicker || ''
+        ) as HTMLInputElement;
         if (field) field.value = color.value;
       });
     });
@@ -299,5 +351,4 @@ const settings = dbService.getSettings();
       }
     });
   </script>
-
 </AdminLayout>

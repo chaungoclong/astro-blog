@@ -1,15 +1,42 @@
 ---
-import { dbService } from '../lib/db';
-const settings = dbService.getSettings();
-const categories = dbService.getCategories().slice(0, 6);
-const pages = dbService.getPages('published').filter((page) => Boolean(page.show_in_nav));
+import { categoryService, pageService, settingService } from '../api';
+const settings = await settingService.getSettings();
+const categories = (await categoryService.getCategories()).slice(0, 6);
+const pages = (await pageService.getPages('published')).filter((page) => Boolean(page.show_in_nav));
 const currentYear = new Date().getFullYear();
 ---
+
 <footer class="public-footer">
   <div class="public-footer-grid">
-    <div><p class="public-footer-kicker">Keep learning. Keep shipping.</p><h2>{settings.site_title || 'Astro TechLog'}</h2><p>{settings.site_description || 'Ghi chép thực tế về công nghệ, web và nghề làm sản phẩm.'}</p></div>
-    <nav aria-label="Liên kết cuối trang"><b>Khám phá</b><a href="/">Bài viết</a><a href="/about">Giới thiệu</a><a href="/search">Tìm kiếm</a>{pages.map((page) => <a href={`/${page.slug}`}>{page.title}</a>)}</nav>
-    <nav aria-label="Chuyên mục"><b>Chuyên mục</b>{categories.map((category) => <a href={`/category/${category.slug}`}>{category.name} <span>{category.post_count || 0}</span></a>)}</nav>
+    <div>
+      <p class="public-footer-kicker">Keep learning. Keep shipping.</p>
+      <h2>{settings.site_title || 'Astro TechLog'}</h2>
+      <p>
+        {settings.site_description || 'Ghi chép thực tế về công nghệ, web và nghề làm sản phẩm.'}
+      </p>
+    </div>
+    <nav aria-label="Liên kết cuối trang">
+      <b>Khám phá</b>
+      <a href="/">Bài viết</a>
+      <a href="/about">Giới thiệu</a>
+      <a href="/search">Tìm kiếm</a>
+      {pages.map((page) => (
+        <a href={`/${page.slug}`}>{page.title}</a>
+      ))}
+    </nav>
+    <nav aria-label="Chuyên mục">
+      <b>Chuyên mục</b>
+      {categories.map((category) => (
+        <a href={`/category/${category.slug}`}>
+          {category.name} <span>{category.post_count || 0}</span>
+        </a>
+      ))}
+    </nav>
   </div>
-  <div class="public-footer-bottom"><span>© {currentYear} {settings.site_title || 'Astro TechLog'}</span><span>Written by {settings.author_name || 'Châu Ngọc Long'}</span></div>
+  <div class="public-footer-bottom">
+    <span>
+      © {currentYear} {settings.site_title || 'Astro TechLog'}
+    </span>
+    <span>Written by {settings.author_name || 'Châu Ngọc Long'}</span>
+  </div>
 </footer>

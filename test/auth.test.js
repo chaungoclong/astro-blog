@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { hashPassword, verifyPassword } from '../src/lib/auth.ts';
+import { hashPassword, verifyPassword } from '../src/api/modules/auth/auth.service.ts';
 
 test('Auth: hashPassword should generate salt:hash format', () => {
   const hash = hashPassword('mySecretPass123');

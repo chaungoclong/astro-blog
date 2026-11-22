@@ -1,6 +1,6 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { dbService } from '../../../lib/db';
+import { categoryService, postService } from '../../../api';
 import { formatDate } from '../../../lib/utils';
 
 // Query parameters
@@ -11,7 +11,7 @@ const page = Number(Astro.url.searchParams.get('page')) || 1;
 const limit = 10;
 const offset = (page - 1) * limit;
 
-const posts = dbService.getPosts({
+const posts = await postService.getPosts({
   status,
   category,
   search,
@@ -20,71 +20,88 @@ const posts = dbService.getPosts({
   sortBy: 'created_at DESC',
 });
 
-const totalPosts = dbService.getPostCount({
+const totalPosts = await postService.getPostCount({
   status,
   category,
   search,
 });
 
 const totalPages = Math.ceil(totalPosts / limit) || 1;
-const categories = dbService.getCategories();
+const categories = await categoryService.getCategories();
 ---
 
 <AdminLayout title="Quản lý bài viết" activeNav="posts">
-  
   <!-- Filter & Search Toolbar Card -->
   <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs p-4 sm:p-5">
     <form method="GET" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-      
       <!-- Search Input -->
       <div class="sm:col-span-5 relative">
-        <input 
-          type="text" 
-          name="q" 
-          value={search || ''} 
-          placeholder="Tìm theo tiêu đề, nội dung, thẻ tags..." 
+        <input
+          type="text"
+          name="q"
+          value={search || ''}
+          placeholder="Tìm theo tiêu đề, nội dung, thẻ tags..."
           class="w-full pl-9 pr-4 py-2 bg-slate-50/70 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-lg text-xs font-medium focus:bg-white transition-all text-slate-800"
         />
-        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        <svg
+          class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          ></path>
         </svg>
       </div>
 
       <!-- Status Filter -->
       <div class="sm:col-span-3">
-        <select 
-          name="status" 
+        <select
+          name="status"
           class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-lg text-xs font-medium focus:bg-white transition-all cursor-pointer text-slate-800"
         >
-          <option value="all" selected={status === 'all'}>Tất cả trạng thái</option>
-          <option value="published" selected={status === 'published'}>Đã xuất bản (Published)</option>
-          <option value="draft" selected={status === 'draft'}>Bản nháp (Draft)</option>
+          <option value="all" selected={status === 'all'}>
+            Tất cả trạng thái
+          </option>
+          <option value="published" selected={status === 'published'}>
+            Đã xuất bản (Published)
+          </option>
+          <option value="draft" selected={status === 'draft'}>
+            Bản nháp (Draft)
+          </option>
         </select>
       </div>
 
       <!-- Category Filter -->
       <div class="sm:col-span-3">
-        <select 
-          name="category" 
+        <select
+          name="category"
           class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-lg text-xs font-medium focus:bg-white transition-all cursor-pointer text-slate-800"
         >
-          <option value="" selected={!category}>Tất cả chuyên mục</option>
+          <option value="" selected={!category}>
+            Tất cả chuyên mục
+          </option>
           {categories.map((cat) => (
-            <option value={cat.name} selected={category === cat.name}>{cat.name}</option>
+            <option value={cat.name} selected={category === cat.name}>
+              {cat.name}
+            </option>
           ))}
         </select>
       </div>
 
       <!-- Submit Filter Button -->
       <div class="sm:col-span-1">
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg shadow-xs text-xs font-semibold transition-colors flex items-center justify-center cursor-pointer"
         >
           Lọc
         </button>
       </div>
-
     </form>
   </div>
 
@@ -121,26 +138,35 @@ const categories = dbService.getCategories();
             <tr>
               <td colspan="7" class="py-14 text-center text-slate-500">
                 <p class="font-semibold text-slate-800">Không tìm thấy bài viết nào.</p>
-                <p class="text-xs text-slate-400 mt-1">Hãy thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm.</p>
+                <p class="text-xs text-slate-400 mt-1">
+                  Hãy thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm.
+                </p>
               </td>
             </tr>
           ) : (
             posts.map((post) => (
               <tr class="hover:bg-slate-50/60 transition-colors group">
-                
                 <td class="py-3.5 px-5 max-w-sm">
                   <div class="flex items-center gap-3">
-                    <img 
-                      src={post.cover_image || 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=150'} 
-                      alt="" 
+                    <img
+                      src={
+                        post.cover_image ||
+                        'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=150'
+                      }
+                      alt=""
                       class="w-10 h-10 object-cover rounded-lg flex-shrink-0 bg-slate-100 border border-slate-200"
                       loading="lazy"
                     />
                     <div class="overflow-hidden">
-                      <a href={`/admin/posts/${post.id}/edit`} class="font-semibold text-slate-900 hover:text-blue-600 block truncate transition-colors text-xs">
+                      <a
+                        href={`/admin/posts/${post.id}/edit`}
+                        class="font-semibold text-slate-900 hover:text-blue-600 block truncate transition-colors text-xs"
+                      >
                         {post.title}
                       </a>
-                      <span class="text-[11px] text-slate-400 font-mono block truncate mt-0.5">/blog/{post.slug}</span>
+                      <span class="text-[11px] text-slate-400 font-mono block truncate mt-0.5">
+                        /blog/{post.slug}
+                      </span>
                     </div>
                   </div>
                 </td>
@@ -178,39 +204,58 @@ const categories = dbService.getCategories();
                 </td>
 
                 <td class="py-3.5 px-5 text-right whitespace-nowrap space-x-1">
-                  <a 
-                    href={`/blog/${post.slug}`} 
+                  <a
+                    href={`/blog/${post.slug}`}
                     target="_blank"
                     title="Xem trên trang blog"
                     class="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors inline-block"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      ></path>
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      ></path>
                     </svg>
                   </a>
 
-                  <a 
-                    href={`/admin/posts/${post.id}/edit`} 
+                  <a
+                    href={`/admin/posts/${post.id}/edit`}
                     title="Chỉnh sửa bài viết"
                     class="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors inline-block"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      ></path>
                     </svg>
                   </a>
 
-                  <button 
+                  <button
                     data-id={post.id}
                     title="Xóa bài viết"
                     class="delete-post-btn p-1.5 rounded-lg border border-slate-200 hover:bg-red-50 hover:border-red-200 text-slate-400 hover:text-red-600 transition-colors inline-block cursor-pointer"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      ></path>
                     </svg>
                   </button>
                 </td>
-
               </tr>
             ))
           )}
@@ -226,7 +271,7 @@ const categories = dbService.getCategories();
         </div>
         <div class="flex items-center gap-1.5">
           {page > 1 && (
-            <a 
+            <a
               href={`?page=${page - 1}&status=${status}&category=${category || ''}&q=${search || ''}`}
               class="px-3 py-1.5 border border-slate-200 hover:bg-white rounded-lg font-medium text-slate-700 shadow-2xs transition-colors"
             >
@@ -234,7 +279,7 @@ const categories = dbService.getCategories();
             </a>
           )}
           {page < totalPages && (
-            <a 
+            <a
               href={`?page=${page + 1}&status=${status}&category=${category || ''}&q=${search || ''}`}
               class="px-3 py-1.5 border border-slate-200 hover:bg-white rounded-lg font-medium text-slate-700 shadow-2xs transition-colors"
             >
@@ -247,8 +292,10 @@ const categories = dbService.getCategories();
   </div>
 
   <script>
-    const toast = (message: string, type: 'success' | 'error' | 'info' = 'info') => (window as any).showAdminToast?.(message, type);
-    const flash = (message: string, type: 'success' | 'error' | 'info' = 'info') => (window as any).setAdminFlash?.(message, type);
+    const toast = (message: string, type: 'success' | 'error' | 'info' = 'info') =>
+      (window as any).showAdminToast?.(message, type);
+    const flash = (message: string, type: 'success' | 'error' | 'info' = 'info') =>
+      (window as any).setAdminFlash?.(message, type);
     document.querySelectorAll('.delete-post-btn').forEach((btn) => {
       btn.addEventListener('click', async (e) => {
         const id = (e.currentTarget as HTMLElement).dataset.id;
@@ -269,5 +316,4 @@ const categories = dbService.getCategories();
       });
     });
   </script>
-
 </AdminLayout>

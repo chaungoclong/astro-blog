@@ -1,78 +1,125 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { dbService } from '../../../lib/db';
-const items = dbService.getMenuItems();
+import { categoryService, menuService, pageService, postService } from '../../../api';
+const items = await menuService.getMenuItems();
 const MENU_SOURCE_LIMIT = 200;
 const ROOT_KEY = 'root';
-const SYSTEM_SOURCES = [{ label: 'Trang chủ', url: '/' }, { label: 'Giới thiệu', url: '/about' }];
-const posts = dbService.getPosts({ status: 'published', limit: MENU_SOURCE_LIMIT });
-const pages = dbService.getPages('published');
-const categories = dbService.getCategories();
+const SYSTEM_SOURCES = [
+  { label: 'Trang chủ', url: '/' },
+  { label: 'Giới thiệu', url: '/about' },
+];
+const posts = await postService.getPosts({ status: 'published', limit: MENU_SOURCE_LIMIT });
+const pages = await pageService.getPages('published');
+const categories = await categoryService.getCategories();
 const SOURCE_KEY_SEPARATOR = '\u0000';
 const sourceKey = (label: string, url: string) => `${label}${SOURCE_KEY_SEPARATOR}${url}`;
 const existingSources = new Set(items.map((item) => sourceKey(item.label, item.url)));
 const children = new Map<string, typeof items>();
-items.forEach((item) => { const key = item.parent_id === null ? ROOT_KEY : String(item.parent_id); children.set(key, [...(children.get(key) || []), item]); });
+items.forEach((item) => {
+  const key = item.parent_id === null ? ROOT_KEY : String(item.parent_id);
+  children.set(key, [...(children.get(key) || []), item]);
+});
 const orderedItems: Array<(typeof items)[number] & { depth: number }> = [];
 const visited = new Set<number>();
 const appendBranch = (parentId: number | null, depth: number) => {
   for (const item of children.get(parentId === null ? ROOT_KEY : String(parentId)) || []) {
     if (visited.has(item.id)) continue;
-    visited.add(item.id); orderedItems.push({ ...item, depth }); appendBranch(item.id, depth + 1);
+    visited.add(item.id);
+    orderedItems.push({ ...item, depth });
+    appendBranch(item.id, depth + 1);
   }
 };
 appendBranch(null, 0);
-items.filter((item) => !visited.has(item.id)).forEach((item) => orderedItems.push({ ...item, depth: 0 }));
-const descendantIds = (rootId: number) => { const result = new Set<number>(); const queue = [rootId]; while (queue.length) { const parentId = queue.shift()!; for (const child of children.get(String(parentId)) || []) if (!result.has(child.id)) { result.add(child.id); queue.push(child.id); } } return result; };
+items
+  .filter((item) => !visited.has(item.id))
+  .forEach((item) => orderedItems.push({ ...item, depth: 0 }));
+const descendantIds = (rootId: number) => {
+  const result = new Set<number>();
+  const queue = [rootId];
+  while (queue.length) {
+    const parentId = queue.shift()!;
+    for (const child of children.get(String(parentId)) || [])
+      if (!result.has(child.id)) {
+        result.add(child.id);
+        queue.push(child.id);
+      }
+  }
+  return result;
+};
 const sourceGroups = [
   { title: 'Trang hệ thống', sources: SYSTEM_SOURCES },
-  { title: 'Trang tĩnh', sources: pages.map((page) => ({ label: page.title, url: `/${page.slug}` })) },
-  { title: 'Chuyên mục', sources: categories.map((category) => ({ label: category.name, url: `/category/${category.slug}` })) },
-  { title: 'Bài viết', sources: posts.map((post) => ({ label: post.title, url: `/blog/${post.slug}` })) },
+  {
+    title: 'Trang tĩnh',
+    sources: pages.map((page) => ({ label: page.title, url: `/${page.slug}` })),
+  },
+  {
+    title: 'Chuyên mục',
+    sources: categories.map((category) => ({
+      label: category.name,
+      url: `/category/${category.slug}`,
+    })),
+  },
+  {
+    title: 'Bài viết',
+    sources: posts.map((post) => ({ label: post.title, url: `/blog/${post.slug}` })),
+  },
 ];
 ---
+
 <AdminLayout title="Quản lý menu" activeNav="menus">
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/60">
     <div>
       <h2 class="text-base font-bold text-slate-900 tracking-tight">Menu điều hướng website</h2>
-      <p class="text-xs text-slate-500 mt-0.5">Chọn nguồn nội dung ở cột trái hoặc kéo thả vào cây menu bên phải để tổ chức cấu trúc phân cấp.</p>
+      <p class="text-xs text-slate-500 mt-0.5">
+        Chọn nguồn nội dung ở cột trái hoặc kéo thả vào cây menu bên phải để tổ chức cấu trúc phân
+        cấp.
+      </p>
     </div>
   </div>
 
   <div class="mt-6 grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
-    
     <!-- Left Column: Sources & Custom Links -->
     <div class="space-y-6">
-      
       <!-- Source Library -->
       <section class="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5">
         <div class="mb-4 border-b border-slate-100 pb-3">
-          <h3 class="font-bold text-xs uppercase tracking-wider text-slate-700">Chọn nội dung thêm vào menu</h3>
-          <p class="text-[11px] text-slate-400 mt-0.5">Kéo thẻ hoặc bấm nút "Thêm" để đưa vào menu</p>
+          <h3 class="font-bold text-xs uppercase tracking-wider text-slate-700">
+            Chọn nội dung thêm vào menu
+          </h3>
+          <p class="text-[11px] text-slate-400 mt-0.5">
+            Kéo thẻ hoặc bấm nút "Thêm" để đưa vào menu
+          </p>
         </div>
 
         <div class="max-h-[32rem] space-y-3 overflow-y-auto pr-1">
           {sourceGroups.map(({ title, sources }) => (
-            <details open={title !== 'Bài viết'} class="rounded-lg border border-slate-200/80 bg-slate-50/50 p-2.5">
+            <details
+              open={title !== 'Bài viết'}
+              class="rounded-lg border border-slate-200/80 bg-slate-50/50 p-2.5"
+            >
               <summary class="cursor-pointer py-1 text-xs font-semibold uppercase text-slate-700 select-none flex items-center justify-between">
                 <span>{title}</span>
-                <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 text-[10px] font-mono">{sources.length}</span>
+                <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 text-[10px] font-mono">
+                  {sources.length}
+                </span>
               </summary>
               <div class="space-y-1.5 mt-2 pt-2 border-t border-slate-200/60">
                 {sources.map((source) => {
                   const exists = existingSources.has(sourceKey(source.label, source.url));
                   return (
-                    <div 
-                      class="menu-source flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2 shadow-2xs hover:border-slate-300 transition-all" 
-                      draggable={!exists} 
-                      data-label={source.label} 
+                    <div
+                      class="menu-source flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2 shadow-2xs hover:border-slate-300 transition-all"
+                      draggable={!exists}
+                      data-label={source.label}
                       data-url={source.url}
                     >
                       <span class="text-slate-400 font-mono text-xs select-none">⋮⋮</span>
-                      <span class="min-w-0 flex-1 truncate text-xs font-medium text-slate-800">{source.label}</span>
-                      <button 
-                        type="button" 
-                        class="add-source px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-700" 
+                      <span class="min-w-0 flex-1 truncate text-xs font-medium text-slate-800">
+                        {source.label}
+                      </span>
+                      <button
+                        type="button"
+                        class="add-source px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-700"
                         disabled={exists}
                       >
                         {exists ? 'Đã có' : '+ Thêm'}
@@ -87,9 +134,14 @@ const sourceGroups = [
       </section>
 
       <!-- Custom Link Form -->
-      <form id="menu-form" class="bg-white rounded-xl border border-slate-200/80 shadow-xs space-y-4 p-5">
+      <form
+        id="menu-form"
+        class="bg-white rounded-xl border border-slate-200/80 shadow-xs space-y-4 p-5"
+      >
         <div class="border-b border-slate-100 pb-2.5">
-          <h3 class="font-bold text-xs uppercase tracking-wider text-slate-700">Liên kết tùy chỉnh</h3>
+          <h3 class="font-bold text-xs uppercase tracking-wider text-slate-700">
+            Liên kết tùy chỉnh
+          </h3>
           <p class="text-[11px] text-slate-400">Thêm liên kết tự do hoặc đường dẫn ngoài</p>
         </div>
 
@@ -97,13 +149,13 @@ const sourceGroups = [
           <label for="custom-label" class="block text-xs font-semibold text-slate-700 mb-1">
             Nhãn hiển thị <span class="text-red-500">*</span>
           </label>
-          <input 
+          <input
             id="custom-label"
-            name="label" 
-            required 
-            aria-required="true" 
-            placeholder="Ví dụ: Tài liệu" 
-            class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all" 
+            name="label"
+            required
+            aria-required="true"
+            placeholder="Ví dụ: Tài liệu"
+            class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
           />
         </div>
 
@@ -111,13 +163,13 @@ const sourceGroups = [
           <label for="custom-url" class="block text-xs font-semibold text-slate-700 mb-1">
             Đường dẫn (URL) <span class="text-red-500">*</span>
           </label>
-          <input 
+          <input
             id="custom-url"
-            name="url" 
-            required 
-            aria-required="true" 
-            placeholder="/tai-lieu hoặc https://..." 
-            class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all" 
+            name="url"
+            required
+            aria-required="true"
+            placeholder="/tai-lieu hoặc https://..."
+            class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
           />
         </div>
 
@@ -125,66 +177,73 @@ const sourceGroups = [
           <label for="custom-parent" class="block text-xs font-semibold text-slate-700 mb-1">
             Vị trí cha
           </label>
-          <select 
+          <select
             id="custom-parent"
-            name="parent_id" 
+            name="parent_id"
             class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all cursor-pointer"
           >
             <option value="">Cấp cao nhất (Root)</option>
             {orderedItems.map((item) => (
-              <option value={item.id}>{'— '.repeat(item.depth)}{item.label}</option>
+              <option value={item.id}>
+                {'— '.repeat(item.depth)}
+                {item.label}
+              </option>
             ))}
           </select>
         </div>
 
-        <button 
-          class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer" 
+        <button
+          class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
           type="submit"
         >
           + Thêm liên kết vào menu
         </button>
       </form>
-
     </div>
 
     <!-- Right Column: Interactive Menu Tree -->
     <section class="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5 sm:p-6">
       <div class="mb-4 flex items-end justify-between gap-4 border-b border-slate-100 pb-3">
         <div>
-          <h3 class="font-bold text-sm text-slate-900 tracking-tight">{items.length} mục trong menu</h3>
-          <p class="text-xs text-slate-500 mt-0.5">Kéo thả để đổi thứ tự/cấp, hoặc dùng các nút Lên/Xuống</p>
+          <h3 class="font-bold text-sm text-slate-900 tracking-tight">
+            {items.length} mục trong menu
+          </h3>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Kéo thả để đổi thứ tự/cấp, hoặc dùng các nút Lên/Xuống
+          </p>
         </div>
-        <div class="text-[11px] font-mono text-slate-400 hidden sm:block">
-          Kéo thả trực tiếp ⇄
-        </div>
+        <div class="text-[11px] font-mono text-slate-400 hidden sm:block">Kéo thả trực tiếp ⇄</div>
       </div>
 
-      <div 
-        id="menu-list" 
-        class="min-h-40 space-y-2.5 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/40 p-4" 
+      <div
+        id="menu-list"
+        class="min-h-40 space-y-2.5 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/40 p-4"
         aria-label="Thả vào đây để đưa mục về cấp cao nhất"
       >
         {orderedItems.map((item) => {
           const excluded = descendantIds(item.id);
           return (
-            <article 
-              draggable="true" 
-              data-id={item.id} 
-              data-parent-id={item.parent_id ?? ''} 
-              class="menu-item flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-2xs transition-all hover:border-slate-300 hover:shadow-xs" 
+            <article
+              draggable="true"
+              data-id={item.id}
+              data-parent-id={item.parent_id ?? ''}
+              class="menu-item flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-2xs transition-all hover:border-slate-300 hover:shadow-xs"
               style={`margin-left:${item.depth * 28}px`}
             >
               <!-- Drag Handle -->
-              <button 
-                type="button" 
-                class="cursor-grab p-1.5 rounded-md border border-slate-200 hover:bg-slate-100 text-slate-400 hover:text-slate-700 select-none transition-colors" 
+              <button
+                type="button"
+                class="cursor-grab p-1.5 rounded-md border border-slate-200 hover:bg-slate-100 text-slate-400 hover:text-slate-700 select-none transition-colors"
                 aria-label={`Kéo thả mục ${item.label}`}
                 title="Kéo thả mục này"
               >
                 <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                  <circle cx="5" cy="3" r="1.3"/><circle cx="11" cy="3" r="1.3"/>
-                  <circle cx="5" cy="8" r="1.3"/><circle cx="11" cy="8" r="1.3"/>
-                  <circle cx="5" cy="13" r="1.3"/><circle cx="11" cy="13" r="1.3"/>
+                  <circle cx="5" cy="3" r="1.3" />
+                  <circle cx="11" cy="3" r="1.3" />
+                  <circle cx="5" cy="8" r="1.3" />
+                  <circle cx="11" cy="8" r="1.3" />
+                  <circle cx="5" cy="13" r="1.3" />
+                  <circle cx="11" cy="13" r="1.3" />
                 </svg>
               </button>
 
@@ -200,68 +259,79 @@ const sourceGroups = [
               </span>
 
               <!-- Parent Selector -->
-              <select 
-                class="parent-select border border-slate-200 rounded-lg p-1.5 text-xs font-medium bg-white text-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all" 
+              <select
+                class="parent-select border border-slate-200 rounded-lg p-1.5 text-xs font-medium bg-white text-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                 aria-label={`Mục cha của ${item.label}`}
               >
                 <option value="">Cấp cao nhất</option>
-                {orderedItems.filter((candidate) => candidate.id !== item.id && !excluded.has(candidate.id)).map((candidate) => (
-                  <option value={candidate.id} selected={candidate.id === item.parent_id}>
-                    {'— '.repeat(candidate.depth)}{candidate.label}
-                  </option>
-                ))}
+                {orderedItems
+                  .filter((candidate) => candidate.id !== item.id && !excluded.has(candidate.id))
+                  .map((candidate) => (
+                    <option value={candidate.id} selected={candidate.id === item.parent_id}>
+                      {'— '.repeat(candidate.depth)}
+                      {candidate.label}
+                    </option>
+                  ))}
               </select>
 
               <!-- Up / Down Action Buttons -->
               <div class="flex items-center gap-1">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   class="move-up px-2 py-1 rounded-md border border-slate-200 hover:bg-slate-100 text-xs font-medium text-slate-600 cursor-pointer transition-colors"
                   title="Di chuyển lên trên"
                 >
                   ↑
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   class="move-down px-2 py-1 rounded-md border border-slate-200 hover:bg-slate-100 text-xs font-medium text-slate-600 cursor-pointer transition-colors"
                   title="Di chuyển xuống dưới"
                 >
                   ↓
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   class="delete-menu px-2 py-1 rounded-md border border-slate-200 hover:bg-red-50 hover:border-red-200 text-xs font-medium text-red-600 cursor-pointer transition-colors"
                   title="Xóa khỏi menu"
                 >
                   Xóa
                 </button>
               </div>
-
             </article>
           );
         })}
 
         {!items.length && (
           <div class="rounded-xl border border-slate-200 bg-white p-8 text-center text-xs text-slate-500">
-            Chưa có mục nào trong menu. Chọn Trang chủ, Giới thiệu hoặc nội dung ở cột trái để bắt đầu!
+            Chưa có mục nào trong menu. Chọn Trang chủ, Giới thiệu hoặc nội dung ở cột trái để bắt
+            đầu!
           </div>
         )}
       </div>
     </section>
-
   </div>
 
   <!-- Delete Modal Dialog -->
-  <dialog id="delete-menu-dialog" class="m-auto w-[min(28rem,calc(100%-2rem))] rounded-xl border border-slate-200 bg-white p-0 shadow-xl backdrop:bg-slate-900/60 backdrop:backdrop-blur-xs">
+  <dialog
+    id="delete-menu-dialog"
+    class="m-auto w-[min(28rem,calc(100%-2rem))] rounded-xl border border-slate-200 bg-white p-0 shadow-xl backdrop:bg-slate-900/60 backdrop:backdrop-blur-xs"
+  >
     <div class="p-6">
       <p class="text-xs font-semibold uppercase tracking-wider text-red-600">Xóa nhánh menu</p>
       <h2 class="mt-1 text-base font-bold text-slate-900">Xóa mục và toàn bộ mục con?</h2>
       <p id="delete-menu-message" class="mt-3 text-xs text-slate-600 leading-relaxed"></p>
       <div class="mt-6 flex justify-end gap-2.5">
-        <button id="cancel-delete-menu" class="px-3.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-medium text-slate-700 cursor-pointer transition-colors">
+        <button
+          id="cancel-delete-menu"
+          class="px-3.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-medium text-slate-700 cursor-pointer transition-colors"
+        >
           Hủy bỏ
         </button>
-        <button id="confirm-delete-menu" class="px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-xs font-semibold text-white shadow-xs cursor-pointer transition-colors">
+        <button
+          id="confirm-delete-menu"
+          class="px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-xs font-semibold text-white shadow-xs cursor-pointer transition-colors"
+        >
           Xác nhận xóa
         </button>
       </div>
@@ -269,15 +339,162 @@ const sourceGroups = [
   </dialog>
 
   <script>
-    const API_URL = '/api/menus'; const DRAG_MIME = 'application/x-cms-menu'; const JSON_HEADERS = { 'Content-Type': 'application/json' }; const POST_METHOD = 'POST'; const PUT_METHOD = 'PUT'; const DELETE_METHOD = 'DELETE';
-    const toast = (message: string, type: 'success' | 'error' = 'success') => (window as any).showAdminToast?.(message, type); const flash = (message: string) => (window as any).setAdminFlash?.(message, 'success');
-    const request = async (url: string, method: string, data?: Record<string, unknown>) => { const response = await fetch(url, { method, headers: data ? JSON_HEADERS : undefined, body: data ? JSON.stringify(data) : undefined }); const result = await response.json(); if (!response.ok) throw new Error(result.message || 'Không thể cập nhật menu.'); return result; };
-    const createItem = (label: string, url: string, parentId: number | null = null) => request(API_URL, POST_METHOD, { label, url, parent_id: parentId }); const updateItem = (item: HTMLElement, data: Record<string, unknown>) => request(`${API_URL}/${item.dataset.id}`, PUT_METHOD, data); const readDrag = (event: DragEvent) => { try { return JSON.parse(event.dataTransfer?.getData(DRAG_MIME) || 'null'); } catch { return null; } };
-    document.querySelector('#menu-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = event.currentTarget as HTMLFormElement; if (!form.reportValidity()) return toast('Vui lòng nhập nhãn và URL.', 'error'); try { await request(API_URL, POST_METHOD, Object.fromEntries(new FormData(form))); flash('Đã thêm mục menu.'); location.reload(); } catch (error: any) { toast(error.message, 'error'); } });
-    document.querySelectorAll<HTMLElement>('.menu-source').forEach((source) => { source.addEventListener('dragstart', (event) => event.dataTransfer?.setData(DRAG_MIME, JSON.stringify({ kind: 'source', label: source.dataset.label, url: source.dataset.url }))); source.querySelector('.add-source:not(:disabled)')?.addEventListener('click', async () => { try { await createItem(source.dataset.label || '', source.dataset.url || ''); flash('Đã thêm nội dung vào menu.'); location.reload(); } catch (error: any) { toast(error.message, 'error'); } }); });
-    const deleteDialog = document.querySelector('#delete-menu-dialog') as HTMLDialogElement; let pendingDeleteItem: HTMLElement | null = null;
-    document.querySelectorAll<HTMLElement>('.menu-item').forEach((item) => { item.querySelector('.parent-select')?.addEventListener('change', async (event) => { try { await updateItem(item, { parent_id: (event.target as HTMLSelectElement).value || null }); flash('Đã cập nhật cấp menu.'); location.reload(); } catch (error: any) { toast(error.message, 'error'); } }); item.querySelector('.delete-menu')?.addEventListener('click', () => { pendingDeleteItem = item; const label = item.querySelector('b')?.textContent || ''; document.querySelector('#delete-menu-message')!.textContent = `“${label}” và toàn bộ mục con sẽ bị xóa khỏi menu. Nội dung nguồn vẫn có thể thêm lại.`; deleteDialog.showModal(); }); for (const [selector, offset] of [['.move-up', -1], ['.move-down', 1]] as const) item.querySelector(selector)?.addEventListener('click', async () => { const siblings = [...document.querySelectorAll<HTMLElement>(`.menu-item[data-parent-id="${item.dataset.parentId || ''}"]`)]; const index = siblings.indexOf(item); const target = siblings[index + offset]; if (!target) return; await Promise.all([updateItem(item, { position: index + offset }), updateItem(target, { position: index })]); flash('Đã cập nhật thứ tự menu.'); location.reload(); }); item.addEventListener('dragstart', (event) => { event.stopPropagation(); event.dataTransfer?.setData(DRAG_MIME, JSON.stringify({ kind: 'menu', id: Number(item.dataset.id) })); }); item.addEventListener('dragover', (event) => { event.preventDefault(); event.stopPropagation(); }); item.addEventListener('drop', async (event) => { event.preventDefault(); event.stopPropagation(); const dragged = readDrag(event); if (!dragged) return; try { if (dragged.kind === 'source') await createItem(dragged.label, dragged.url, Number(item.dataset.id)); else await request(`${API_URL}/${dragged.id}`, PUT_METHOD, { parent_id: Number(item.dataset.id) }); flash('Đã cập nhật cây menu.'); location.reload(); } catch (error: any) { toast(error.message, 'error'); } }); });
-    document.querySelector('#cancel-delete-menu')?.addEventListener('click', () => deleteDialog.close()); document.querySelector('#confirm-delete-menu')?.addEventListener('click', async () => { if (!pendingDeleteItem) return; try { await request(`${API_URL}/${pendingDeleteItem.dataset.id}`, DELETE_METHOD); flash('Đã xóa nhánh menu.'); location.reload(); } catch (error: any) { toast(error.message, 'error'); } });
-    const menuList = document.querySelector('#menu-list') as HTMLElement; menuList.addEventListener('dragover', (event) => event.preventDefault()); menuList.addEventListener('drop', async (event) => { if (event.target !== menuList) return; event.preventDefault(); const dragged = readDrag(event); if (!dragged) return; try { if (dragged.kind === 'source') await createItem(dragged.label, dragged.url); else await request(`${API_URL}/${dragged.id}`, PUT_METHOD, { parent_id: null }); flash('Đã đưa mục về cấp cao nhất.'); location.reload(); } catch (error: any) { toast(error.message, 'error'); } });
+    const API_URL = '/api/menus';
+    const DRAG_MIME = 'application/x-cms-menu';
+    const JSON_HEADERS = { 'Content-Type': 'application/json' };
+    const POST_METHOD = 'POST';
+    const PUT_METHOD = 'PUT';
+    const DELETE_METHOD = 'DELETE';
+    const toast = (message: string, type: 'success' | 'error' = 'success') =>
+      (window as any).showAdminToast?.(message, type);
+    const flash = (message: string) => (window as any).setAdminFlash?.(message, 'success');
+    const request = async (url: string, method: string, data?: Record<string, unknown>) => {
+      const response = await fetch(url, {
+        method,
+        headers: data ? JSON_HEADERS : undefined,
+        body: data ? JSON.stringify(data) : undefined,
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Không thể cập nhật menu.');
+      return result;
+    };
+    const createItem = (label: string, url: string, parentId: number | null = null) =>
+      request(API_URL, POST_METHOD, { label, url, parent_id: parentId });
+    const updateItem = (item: HTMLElement, data: Record<string, unknown>) =>
+      request(`${API_URL}/${item.dataset.id}`, PUT_METHOD, data);
+    const readDrag = (event: DragEvent) => {
+      try {
+        return JSON.parse(event.dataTransfer?.getData(DRAG_MIME) || 'null');
+      } catch {
+        return null;
+      }
+    };
+    document.querySelector('#menu-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget as HTMLFormElement;
+      if (!form.reportValidity()) return toast('Vui lòng nhập nhãn và URL.', 'error');
+      try {
+        await request(API_URL, POST_METHOD, Object.fromEntries(new FormData(form)));
+        flash('Đã thêm mục menu.');
+        location.reload();
+      } catch (error: any) {
+        toast(error.message, 'error');
+      }
+    });
+    document.querySelectorAll<HTMLElement>('.menu-source').forEach((source) => {
+      source.addEventListener('dragstart', (event) =>
+        event.dataTransfer?.setData(
+          DRAG_MIME,
+          JSON.stringify({ kind: 'source', label: source.dataset.label, url: source.dataset.url })
+        )
+      );
+      source.querySelector('.add-source:not(:disabled)')?.addEventListener('click', async () => {
+        try {
+          await createItem(source.dataset.label || '', source.dataset.url || '');
+          flash('Đã thêm nội dung vào menu.');
+          location.reload();
+        } catch (error: any) {
+          toast(error.message, 'error');
+        }
+      });
+    });
+    const deleteDialog = document.querySelector('#delete-menu-dialog') as HTMLDialogElement;
+    let pendingDeleteItem: HTMLElement | null = null;
+    document.querySelectorAll<HTMLElement>('.menu-item').forEach((item) => {
+      item.querySelector('.parent-select')?.addEventListener('change', async (event) => {
+        try {
+          await updateItem(item, { parent_id: (event.target as HTMLSelectElement).value || null });
+          flash('Đã cập nhật cấp menu.');
+          location.reload();
+        } catch (error: any) {
+          toast(error.message, 'error');
+        }
+      });
+      item.querySelector('.delete-menu')?.addEventListener('click', () => {
+        pendingDeleteItem = item;
+        const label = item.querySelector('b')?.textContent || '';
+        document.querySelector('#delete-menu-message')!.textContent =
+          `“${label}” và toàn bộ mục con sẽ bị xóa khỏi menu. Nội dung nguồn vẫn có thể thêm lại.`;
+        deleteDialog.showModal();
+      });
+      for (const [selector, offset] of [
+        ['.move-up', -1],
+        ['.move-down', 1],
+      ] as const)
+        item.querySelector(selector)?.addEventListener('click', async () => {
+          const siblings = [
+            ...document.querySelectorAll<HTMLElement>(
+              `.menu-item[data-parent-id="${item.dataset.parentId || ''}"]`
+            ),
+          ];
+          const index = siblings.indexOf(item);
+          const target = siblings[index + offset];
+          if (!target) return;
+          await Promise.all([
+            updateItem(item, { position: index + offset }),
+            updateItem(target, { position: index }),
+          ]);
+          flash('Đã cập nhật thứ tự menu.');
+          location.reload();
+        });
+      item.addEventListener('dragstart', (event) => {
+        event.stopPropagation();
+        event.dataTransfer?.setData(
+          DRAG_MIME,
+          JSON.stringify({ kind: 'menu', id: Number(item.dataset.id) })
+        );
+      });
+      item.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      });
+      item.addEventListener('drop', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const dragged = readDrag(event);
+        if (!dragged) return;
+        try {
+          if (dragged.kind === 'source')
+            await createItem(dragged.label, dragged.url, Number(item.dataset.id));
+          else
+            await request(`${API_URL}/${dragged.id}`, PUT_METHOD, {
+              parent_id: Number(item.dataset.id),
+            });
+          flash('Đã cập nhật cây menu.');
+          location.reload();
+        } catch (error: any) {
+          toast(error.message, 'error');
+        }
+      });
+    });
+    document
+      .querySelector('#cancel-delete-menu')
+      ?.addEventListener('click', () => deleteDialog.close());
+    document.querySelector('#confirm-delete-menu')?.addEventListener('click', async () => {
+      if (!pendingDeleteItem) return;
+      try {
+        await request(`${API_URL}/${pendingDeleteItem.dataset.id}`, DELETE_METHOD);
+        flash('Đã xóa nhánh menu.');
+        location.reload();
+      } catch (error: any) {
+        toast(error.message, 'error');
+      }
+    });
+    const menuList = document.querySelector('#menu-list') as HTMLElement;
+    menuList.addEventListener('dragover', (event) => event.preventDefault());
+    menuList.addEventListener('drop', async (event) => {
+      if (event.target !== menuList) return;
+      event.preventDefault();
+      const dragged = readDrag(event);
+      if (!dragged) return;
+      try {
+        if (dragged.kind === 'source') await createItem(dragged.label, dragged.url);
+        else await request(`${API_URL}/${dragged.id}`, PUT_METHOD, { parent_id: null });
+        flash('Đã đưa mục về cấp cao nhất.');
+        location.reload();
+      } catch (error: any) {
+        toast(error.message, 'error');
+      }
+    });
   </script>
 </AdminLayout>
