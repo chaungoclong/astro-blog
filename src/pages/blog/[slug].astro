@@ -1,0 +1,296 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { dbService } from '../../lib/db';
+import { formatDate, calculateReadingTime, renderMarkdown, slugify } from '../../lib/utils';
+import { isAuthenticated } from '../../lib/auth';
+import { generateBlogPostingSchema } from '../../lib/seo';
+
+const { slug } = Astro.params;
+if (!slug) {
+  return Astro.redirect('/');
+}
+
+const post = dbService.getPostBySlug(slug);
+
+// If not found or if draft and user is not admin
+const isAdmin = isAuthenticated(Astro.cookies);
+if (!post || (post.status === 'draft' && !isAdmin)) {
+  return Astro.redirect('/');
+}
+
+// Increment view count
+dbService.incrementViews(slug);
+
+const settings = dbService.getSettings();
+const siteTitle = settings.site_title || 'Astro TechLog';
+const origin = Astro.url.origin;
+
+const readingTime = calculateReadingTime(post.content);
+const formattedDate = formatDate(post.created_at);
+const htmlContent = renderMarkdown(post.content);
+
+// Extract headings for Table of Contents
+const headingRegex = /^(#{2,3})\s+(.+)$/gm;
+const headings: { level: number; text: string; id: string }[] = [];
+let match;
+while ((match = headingRegex.exec(post.content)) !== null) {
+  headings.push({
+    level: match[1].length,
+    text: match[2].trim(),
+    id: slugify(match[2].trim()),
+  });
+}
+
+// Tags array
+const tags = post.tags ? post.tags.split(',').map((t) => t.trim()).filter(Boolean) : [];
+
+// Related posts
+const relatedPosts = dbService
+  .getPosts({ status: 'published', category: post.category, limit: 3 })
+  .filter((p) => p.slug !== post.slug);
+
+// Structured data
+const jsonLd = generateBlogPostingSchema(post, origin, siteTitle);
+---
+
+<BaseLayout 
+  title={post.title} 
+  description={post.excerpt} 
+  image={post.cover_image}
+  schema={jsonLd}
+  article={{
+    publishedTime: new Date(post.created_at).toISOString(),
+    modifiedTime: new Date(post.updated_at || post.created_at).toISOString(),
+    author: post.author,
+    tags: tags,
+    section: post.category
+  }}
+>
+  
+  <article class="public-content-rail py-10 sm:py-14">
+    
+    <!-- Top Breadcrumbs & Admin Edit Button -->
+    <div class="flex items-center justify-between gap-4 mb-6">
+      <nav aria-label="Breadcrumb" class="public-breadcrumb !mb-0">
+        <ol>
+          <li><a href="/">Trang chủ</a></li>
+          <li aria-hidden="true">/</li>
+          <li><a href={`/category/${post.category}`}>{post.category}</a></li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page">{post.title}</li>
+        </ol>
+      </nav>
+
+      {isAdmin && (
+        <a 
+          href={`/admin/posts/${post.id}/edit`}
+          class="inline-flex items-center gap-1.5 px-3 py-1 bg-[var(--retro-yellow)] border-2 border-zinc-950 text-zinc-950 text-xs font-black shadow-[2px_2px_0_var(--retro-ink)] hover:translate-x-0.5 hover:translate-y-0.5 transition-transform"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+          </svg>
+          <span>Sửa bài này</span>
+        </a>
+      )}
+    </div>
+
+    <!-- Draft notification for Admin -->
+    {post.status === 'draft' && (
+      <div role="alert" class="mb-6 p-4 bg-amber-50 border-2 border-zinc-950 text-amber-950 text-xs font-semibold flex items-center gap-2.5 shadow-[3px_3px_0_var(--retro-ink)]">
+        <span class="w-2.5 h-2.5 bg-amber-500 border border-zinc-950"></span>
+        <span><strong>Lưu ý:</strong> Bài viết này đang ở trạng thái <strong>Bản nháp</strong> và chỉ hiển thị đối với bạn (Quản trị viên).</span>
+      </div>
+    )}
+
+    <!-- Category Pill -->
+    <div class="mb-4">
+      <a 
+        href={`/category/${post.category}`}
+        class="inline-flex items-center px-3 py-1 text-xs font-black uppercase tracking-wider bg-[var(--retro-yellow)] text-zinc-950 border-2 border-zinc-950 shadow-[2px_2px_0_var(--retro-ink)] hover:bg-yellow-300 transition-colors"
+      >
+        {post.category}
+      </a>
+    </div>
+
+    <!-- Article Main Title (H1) -->
+    <h1 class="text-3xl sm:text-5xl lg:text-6xl font-bold text-zinc-950 tracking-tight leading-[1.05] mb-6" style="font-family: var(--font-display);">
+      {post.title}
+    </h1>
+
+    <!-- Excerpt / Subtitle -->
+    {post.excerpt && (
+      <p class="text-lg sm:text-xl text-zinc-600 leading-relaxed mb-8 font-normal">
+        {post.excerpt}
+      </p>
+    )}
+
+    <!-- Metadata Bar -->
+    <div class="py-3.5 border-y-2 border-zinc-950 flex flex-wrap items-center justify-between gap-4 text-xs text-zinc-600 mb-10 font-mono">
+      
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 border-2 border-zinc-950 bg-[var(--brand,#0f766e)] text-white font-black flex items-center justify-center text-sm shadow-[2px_2px_0_var(--retro-ink)]">
+          {post.author ? post.author.charAt(0).toUpperCase() : 'A'}
+        </div>
+        <div>
+          <span class="font-bold text-zinc-950 font-sans block text-sm">{post.author}</span>
+          <time datetime={post.created_at} class="text-zinc-500">{formattedDate}</time>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 text-zinc-500 font-bold">
+        <span class="flex items-center gap-1.5" title="Thời gian đọc ước tính">
+          <span>⏱</span>
+          <span>{readingTime}</span>
+        </span>
+        <span aria-hidden="true" class="text-zinc-300">/</span>
+        <span class="flex items-center gap-1.5" title="Lượt xem bài">
+          <span>👁</span>
+          <span>{post.views + 1} xem</span>
+        </span>
+      </div>
+
+    </div>
+
+    <!-- Cover Image -->
+    {post.cover_image && (
+      <div class="mb-12 border-2 border-zinc-950 shadow-[6px_6px_0_var(--retro-ink)] aspect-[16/9] bg-zinc-100 overflow-hidden">
+        <img 
+          src={post.cover_image} 
+          alt={`Ảnh bìa bài viết: ${post.title}`}
+          class="w-full h-full object-cover"
+          loading="eager"
+        />
+      </div>
+    )}
+
+    <!-- Layout: Article Body + Table of Contents -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+      
+      <!-- Main Content (8 cols on large screen, 12 cols if no headings) -->
+      <div class={headings.length > 1 ? 'lg:col-span-8' : 'lg:col-span-12'}>
+        <div class="prose-content max-w-none mb-12">
+          <Fragment set:html={htmlContent} />
+        </div>
+
+        <!-- Tags List -->
+        {tags.length > 0 && (
+          <div class="py-5 border-t-2 border-zinc-950 flex flex-wrap items-center gap-2 mb-10">
+            <span class="text-xs font-mono font-bold text-zinc-500 uppercase tracking-wider mr-2">Thẻ:</span>
+            {tags.map((tag) => (
+              <a 
+                href={`/search?q=${encodeURIComponent(tag)}`}
+                class="px-2.5 py-1 bg-white hover:bg-[var(--retro-yellow)] border-2 border-zinc-950 text-xs font-mono font-bold text-zinc-900 shadow-[2px_2px_0_var(--retro-ink)] transition-colors"
+              >
+                #{tag}
+              </a>
+            ))}
+          </div>
+        )}
+
+        <!-- Share & Author Box -->
+        <div class="p-6 bg-zinc-50 border-2 border-zinc-950 shadow-[4px_4px_0_var(--retro-ink)] flex flex-col sm:flex-row items-center justify-between gap-4 mb-16">
+          <div>
+            <h4 class="font-bold text-zinc-950 text-sm" style="font-family: var(--font-display);">Thích bài viết này?</h4>
+            <p class="text-xs text-zinc-500 mt-0.5">Chia sẻ nội dung hữu ích tới bạn bè và cộng đồng lập trình viên</p>
+          </div>
+
+          <div class="flex items-center gap-2.5">
+            <button 
+              id="copy-link-btn"
+              class="px-3.5 py-2 bg-white hover:bg-[var(--retro-yellow)] border-2 border-zinc-950 text-zinc-950 text-xs font-bold transition-all flex items-center gap-1.5 shadow-[2px_2px_0_var(--retro-ink)] cursor-pointer"
+            >
+              <svg class="w-4 h-4 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+              </svg>
+              <span id="copy-btn-text">Sao chép link</span>
+            </button>
+
+            <a 
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(Astro.url.href)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="p-2 bg-white hover:bg-[var(--retro-yellow)] border-2 border-zinc-950 text-zinc-950 text-xs font-bold transition-all shadow-[2px_2px_0_var(--retro-ink)]"
+              title="Chia sẻ lên Twitter"
+              aria-label="Chia sẻ lên Twitter"
+            >
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.936 9.936 0 0024 4.59z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Table of Contents Sidebar (4 cols) -->
+      {headings.length > 1 && (
+        <aside class="hidden lg:block lg:col-span-4">
+          <div class="sticky top-24 bg-white p-5 border-2 border-zinc-950 shadow-[4px_4px_0_var(--retro-ink)]">
+            <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-zinc-950 border-b-2 border-zinc-950 pb-2.5 mb-3 flex items-center justify-between">
+              <span>Mục lục bài viết</span>
+              <span class="text-[10px] text-zinc-500">TOC</span>
+            </h3>
+
+            <nav class="space-y-1.5 text-xs font-medium">
+              {headings.map((h) => (
+                <a 
+                  href={`#${h.id}`}
+                  class={`block hover:text-[var(--brand,#0f766e)] hover:underline transition-colors line-clamp-1 py-0.5 text-zinc-700 ${h.level === 3 ? 'pl-3 text-zinc-500 text-[11px]' : 'font-bold text-zinc-900'}`}
+                >
+                  {h.text}
+                </a>
+              ))}
+            </nav>
+          </div>
+        </aside>
+      )}
+
+    </div>
+
+    <!-- Related Articles -->
+    {relatedPosts.length > 0 && (
+      <div class="pt-10 border-t-2 border-zinc-950 mt-10">
+        <div class="home-section-label">
+          <span>02</span>
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-bold text-zinc-950" style="font-family: var(--font-display);">Bài viết cùng chuyên mục</h2>
+            <p>Có thể bạn cũng muốn đọc thêm về {post.category}</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {relatedPosts.map((rPost) => (
+            <PostCard post={rPost} />
+          ))}
+        </div>
+      </div>
+    )}
+
+  </article>
+
+  <script>
+    // Copy link button
+    const copyBtn = document.getElementById('copy-link-btn');
+    const copyText = document.getElementById('copy-btn-text');
+
+    copyBtn?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        if (copyText) copyText.textContent = 'Đã sao chép!';
+        setTimeout(() => {
+          if (copyText) copyText.textContent = 'Sao chép link';
+        }, 2000);
+      } catch {
+        alert('Không thể sao chép liên kết.');
+      }
+    });
+
+    // Automatically set ID for headings matching TOC
+    document.querySelectorAll('.prose-content h2, .prose-content h3').forEach((heading) => {
+      const text = heading.textContent || '';
+      const cleanId = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+      heading.id = cleanId;
+    });
+  </script>
+
+</BaseLayout>

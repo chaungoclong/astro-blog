@@ -1,0 +1,22 @@
+{
+  "name": "astro-blog-cms",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev --host",
+    "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
+    "test": "node --test test/**/*.test.js",
+    "astro": "ASTRO_TELEMETRY_DISABLED=1 astro"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.5.5",
+    "@tailwindcss/vite": "^4.3.5",
+    "astro": "^5.18.2",
+    "marked": "^18.2.1",
+    "tailwindcss": "^4.3.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6"
+  }
+}

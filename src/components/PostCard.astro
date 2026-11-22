@@ -1,0 +1,87 @@
+---
+import type { Post } from '../lib/db';
+import { formatDate, calculateReadingTime } from '../lib/utils';
+
+interface Props {
+  post: Post;
+  featured?: boolean;
+}
+
+const { post, featured = false } = Astro.props;
+const readingTime = calculateReadingTime(post.content);
+const formattedDate = formatDate(post.created_at);
+---
+
+<article class={`post-card group relative flex flex-col bg-white overflow-hidden transition-all ${featured ? 'post-card-featured md:grid md:grid-cols-2 md:gap-8' : ''}`}>
+  
+  <!-- Image Container -->
+  <div class={`relative overflow-hidden bg-zinc-100 aspect-[16/10] ${featured ? 'md:aspect-auto md:h-full border-b-2 md:border-b-0 md:border-r-2 border-zinc-950' : 'border-b-2 border-zinc-950'}`}>
+    <a href={`/blog/${post.slug}`} class="block w-full h-full" tabindex="-1" aria-hidden="true">
+      <img 
+        src={post.cover_image || 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&auto=format&fit=crop&q=80'} 
+        alt={`Ảnh minh họa cho bài viết: ${post.title}`}
+        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
+        loading="lazy"
+      />
+    </a>
+    <div class="absolute top-3 left-3">
+      <a 
+        href={`/category/${post.category}`}
+        class="inline-flex items-center px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider bg-[var(--retro-yellow)] text-zinc-950 border-2 border-zinc-950 shadow-[2px_2px_0_var(--retro-ink)] hover:bg-yellow-300 transition-colors"
+      >
+        {post.category}
+      </a>
+    </div>
+  </div>
+
+  <!-- Content Container -->
+  <div class="flex-1 p-5 sm:p-6 flex flex-col justify-between">
+    <div>
+      <!-- Meta top -->
+      <div class="flex items-center gap-2 text-[11px] font-mono text-zinc-500 mb-2.5 font-bold">
+        <time datetime={post.created_at}>{formattedDate}</time>
+        <span aria-hidden="true" class="text-zinc-300">/</span>
+        <span>{readingTime}</span>
+        {post.views > 0 && (
+          <>
+            <span aria-hidden="true" class="text-zinc-300">/</span>
+            <span>{post.views} xem</span>
+          </>
+        )}
+      </div>
+
+      <!-- Title -->
+      <h3 class={`font-bold text-zinc-950 group-hover:text-[var(--brand,#0f766e)] transition-colors tracking-tight line-clamp-2 ${featured ? 'text-2xl sm:text-3xl mb-3' : 'text-lg sm:text-xl mb-2'}`} style="font-family: var(--font-display);">
+        <a href={`/blog/${post.slug}`} class="focus:outline-none focus-visible:underline">
+          {post.title}
+        </a>
+      </h3>
+
+      <!-- Excerpt -->
+      <p class={`text-zinc-600 text-xs sm:text-sm leading-relaxed line-clamp-3 mb-5 ${featured ? 'sm:text-base' : ''}`}>
+        {post.excerpt}
+      </p>
+    </div>
+
+    <!-- Author & Read more button -->
+    <div class="pt-3.5 border-t-2 border-zinc-100 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 border-2 border-zinc-950 bg-[var(--brand,#0f766e)] text-white font-black flex items-center justify-center text-[10px] shadow-[1px_1px_0_var(--retro-ink)]">
+          {post.author ? post.author.charAt(0).toUpperCase() : 'A'}
+        </div>
+        <span class="text-xs font-bold text-zinc-800">{post.author}</span>
+      </div>
+
+      <a 
+        href={`/blog/${post.slug}`} 
+        class="text-xs font-black text-[var(--brand-deep,#115e59)] border-b-2 border-current inline-flex items-center gap-1 group-hover:gap-1.5 transition-all focus:outline-none"
+        aria-label={`Đọc bài viết: ${post.title}`}
+      >
+        <span>Đọc bài</span>
+        <span aria-hidden="true">→</span>
+      </a>
+    </div>
+
+  </div>
+
+</article>

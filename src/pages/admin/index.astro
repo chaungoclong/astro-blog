@@ -1,0 +1,309 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { dbService } from '../../lib/db';
+import { formatDate } from '../../lib/utils';
+
+const stats = dbService.getStats();
+const recentPosts = dbService.getPosts({ status: 'all', limit: 8, sortBy: 'created_at DESC' });
+const settings = dbService.getSettings();
+---
+
+<AdminLayout title="Tổng quan hệ thống" activeNav="dashboard">
+  
+  <!-- Metric Statistics Grid (4 columns, clean Material dashboard cards) -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+    
+    <!-- Card 1: Total Posts -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs hover:shadow-sm transition-shadow">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng bài viết</span>
+        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+        </div>
+      </div>
+      <div class="mt-3 flex items-baseline gap-1.5">
+        <span class="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">{stats.totalPosts}</span>
+        <span class="text-xs text-slate-500 font-medium">bài</span>
+      </div>
+      <div class="mt-3 pt-2.5 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+        <span>Cơ sở dữ liệu</span>
+        <span class="font-mono text-slate-700 font-medium">SQLite Node 22</span>
+      </div>
+    </div>
+
+    <!-- Card 2: Published -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs hover:shadow-sm transition-shadow">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đã xuất bản</span>
+        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
+      </div>
+      <div class="mt-3 flex items-baseline gap-1.5">
+        <span class="text-3xl font-extrabold text-emerald-600 tracking-tight font-sans">{stats.publishedPosts}</span>
+        <span class="text-xs text-emerald-600/80 font-medium">
+          ({stats.totalPosts > 0 ? `${Math.round((stats.publishedPosts / stats.totalPosts) * 100)}%` : '0%'})
+        </span>
+      </div>
+      <div class="mt-3 pt-2.5 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+        <span>Trạng thái</span>
+        <span class="text-emerald-700 font-medium flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          Public
+        </span>
+      </div>
+    </div>
+
+    <!-- Card 3: Drafts -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs hover:shadow-sm transition-shadow">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Bản nháp</span>
+        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+          </svg>
+        </div>
+      </div>
+      <div class="mt-3 flex items-baseline gap-1.5">
+        <span class="text-3xl font-extrabold text-amber-600 tracking-tight font-sans">{stats.draftPosts}</span>
+        <span class="text-xs text-amber-600/80 font-medium">bản thảo</span>
+      </div>
+      <div class="mt-3 pt-2.5 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+        <span>Tiến độ</span>
+        <span class="text-amber-700 font-medium">Chờ duyệt</span>
+      </div>
+    </div>
+
+    <!-- Card 4: Total Views -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs hover:shadow-sm transition-shadow">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng lượt xem</span>
+        <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+          </svg>
+        </div>
+      </div>
+      <div class="mt-3 flex items-baseline gap-1.5">
+        <span class="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">{stats.totalViews}</span>
+        <span class="text-xs text-slate-500 font-medium">lượt</span>
+      </div>
+      <div class="mt-3 pt-2.5 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+        <span>Trung bình</span>
+        <span class="font-mono text-slate-700 font-medium">
+          ~{stats.totalPosts > 0 ? Math.round(stats.totalViews / stats.totalPosts) : 0} view/bài
+        </span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Recent Posts Table Card (Clean Material Table) -->
+  <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+    
+    <!-- Table Header Toolbar -->
+    <div class="p-5 border-b border-slate-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div>
+        <h2 class="text-sm font-bold text-slate-900 tracking-tight">Bài viết quản lý gần đây</h2>
+        <p class="text-xs text-slate-500 mt-0.5">Danh sách các bài viết mới tạo hoặc cập nhật gần nhất</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <a 
+          href="/admin/posts/new"
+          class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs text-xs font-semibold transition-colors inline-flex items-center gap-1.5"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          <span>Tạo bài mới</span>
+        </a>
+
+        <a 
+          href="/admin/posts" 
+          class="text-xs font-medium text-slate-700 hover:text-slate-900 px-3.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors"
+        >
+          Xem tất cả ({stats.totalPosts})
+        </a>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="bg-slate-50/75 border-b border-slate-200/80 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <th class="py-3 px-5">Bài viết</th>
+            <th class="py-3 px-4">Chuyên mục</th>
+            <th class="py-3 px-4">Trạng thái</th>
+            <th class="py-3 px-4 text-center">Lượt xem</th>
+            <th class="py-3 px-4">Ngày tạo</th>
+            <th class="py-3 px-5 text-right">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {recentPosts.length === 0 ? (
+            <tr>
+              <td colspan="6" class="py-12 text-center text-slate-500">
+                Chưa có bài viết nào. Hãy bấm "Tạo bài mới" để bắt đầu!
+              </td>
+            </tr>
+          ) : (
+            recentPosts.map((post) => (
+              <tr class="hover:bg-slate-50/60 transition-colors group">
+                
+                <!-- Title & Slug -->
+                <td class="py-3.5 px-5 max-w-xs sm:max-w-md">
+                  <div class="flex items-center gap-3">
+                    <img 
+                      src={post.cover_image || 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=150'} 
+                      alt="" 
+                      class="w-10 h-10 object-cover rounded-lg flex-shrink-0 bg-slate-100 border border-slate-200"
+                      loading="lazy"
+                    />
+                    <div class="overflow-hidden">
+                      <a href={`/admin/posts/${post.id}/edit`} class="font-semibold text-slate-900 hover:text-blue-600 block truncate transition-colors text-xs">
+                        {post.title}
+                      </a>
+                      <span class="text-[11px] text-slate-400 font-mono block truncate mt-0.5">/blog/{post.slug}</span>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Category -->
+                <td class="py-3.5 px-4 text-slate-700 whitespace-nowrap">
+                  <span class="px-2.5 py-0.5 text-[11px] font-medium rounded-full bg-slate-100 text-slate-700 border border-slate-200/60">
+                    {post.category}
+                  </span>
+                </td>
+
+                <!-- Status Pill -->
+                <td class="py-3.5 px-4 whitespace-nowrap">
+                  {post.status === 'published' ? (
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-medium rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Xuất bản
+                    </span>
+                  ) : (
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-medium rounded-full bg-amber-50 text-amber-700 border border-amber-200/60">
+                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      Bản nháp
+                    </span>
+                  )}
+                </td>
+
+                <!-- Views -->
+                <td class="py-3.5 px-4 text-center font-mono font-medium text-slate-700 text-xs">
+                  {post.views}
+                </td>
+
+                <!-- Date -->
+                <td class="py-3.5 px-4 text-slate-500 text-xs whitespace-nowrap">
+                  {formatDate(post.created_at)}
+                </td>
+
+                <!-- Action Buttons -->
+                <td class="py-3.5 px-5 text-right whitespace-nowrap space-x-1">
+                  <a 
+                    href={`/blog/${post.slug}`} 
+                    target="_blank"
+                    title="Xem trên trang blog"
+                    class="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors inline-block"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
+                  </a>
+                  <a 
+                    href={`/admin/posts/${post.id}/edit`} 
+                    title="Chỉnh sửa bài viết"
+                    class="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors inline-block"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                  </a>
+                  <button 
+                    data-id={post.id}
+                    title="Xóa bài viết"
+                    class="delete-post-btn p-1.5 rounded-lg border border-slate-200 hover:bg-red-50 hover:border-red-200 text-slate-400 hover:text-red-600 transition-colors inline-block cursor-pointer"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button>
+                </td>
+
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- System Health & Technical Architecture Widget -->
+  <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5 sm:p-6">
+    <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Thông số kỹ thuật hạ tầng (System Health)</span>
+      </div>
+      <span class="text-xs font-mono text-slate-400">Node.js 22 • Astro 5.x</span>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-sans">
+      <div class="p-4 rounded-lg bg-slate-50/70 border border-slate-200/70">
+        <span class="text-slate-400 text-[10px] block uppercase font-semibold">Rendering Engine</span>
+        <span class="text-slate-900 font-bold mt-1 block text-sm">Astro Server Standalone</span>
+        <span class="text-slate-500 text-[11px]">Zero-JS Island Hydration</span>
+      </div>
+
+      <div class="p-4 rounded-lg bg-slate-50/70 border border-slate-200/70">
+        <span class="text-slate-400 text-[10px] block uppercase font-semibold">Database Storage</span>
+        <span class="text-slate-900 font-bold mt-1 block text-sm">node:sqlite (data/blog.db)</span>
+        <span class="text-slate-500 text-[11px]">Zero Native C++ dependencies</span>
+      </div>
+
+      <div class="p-4 rounded-lg bg-slate-50/70 border border-slate-200/70">
+        <span class="text-slate-400 text-[10px] block uppercase font-semibold">Security Protocols</span>
+        <span class="text-slate-900 font-bold mt-1 block text-sm">Scrypt + HttpOnly Cookie</span>
+        <span class="text-slate-500 text-[11px]">Session Tokenized Auth</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const toast = (message: string, type: 'success' | 'error' | 'info' = 'info') => (window as any).showAdminToast?.(message, type);
+    const flash = (message: string, type: 'success' | 'error' | 'info' = 'info') => (window as any).setAdminFlash?.(message, type);
+    document.querySelectorAll('.delete-post-btn').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id;
+        if (!confirm('Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác.')) {
+          return;
+        }
+
+        try {
+          const res = await fetch(`/api/posts/${id}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            flash('Đã xóa bài viết thành công.', 'success');
+            window.location.reload();
+          } else {
+            toast(data.message || 'Lỗi khi xóa bài viết.', 'error');
+          }
+        } catch {
+          toast('Lỗi kết nối khi xóa bài viết.', 'error');
+        }
+      });
+    });
+  </script>
+
+</AdminLayout>

@@ -1,0 +1,19 @@
+---
+import type { MenuItem } from '../lib/db';
+import MenuTree from './MenuTree.astro';
+interface Props { items: MenuItem[]; parentId?: number | null; currentPath: string; mobile?: boolean; depth?: number; visitedIds?: number[]; }
+const { items, parentId = null, currentPath, mobile = false, depth = 0, visitedIds = [] } = Astro.props;
+const visited = new Set(visitedIds);
+const branches = items.filter((item) => item.parent_id === parentId && !visited.has(item.id));
+---
+<ul class={mobile ? (parentId === null ? 'space-y-1' : 'ml-4 border-l border-slate-200 pl-2') : (parentId === null ? 'flex items-center gap-1' : `invisible absolute z-50 min-w-56 translate-y-2 rounded-xl border border-slate-100 bg-white py-2 opacity-0 shadow-xl transition group-hover/menu:visible group-hover/menu:translate-y-0 group-hover/menu:opacity-100 ${depth === 1 ? 'left-0 top-full' : 'left-full top-0'}`)}>
+  {branches.map((item) => {
+    const hasChildren = items.some((candidate) => candidate.parent_id === item.id);
+    return <li class={mobile ? '' : 'group/menu relative'}>
+      <a href={item.url} class={`${mobile ? 'block px-3 py-2' : 'flex items-center justify-between gap-2 whitespace-nowrap rounded-xl px-3.5 py-2'} ${currentPath === item.url ? 'bg-blue-50 font-bold text-blue-600' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'}`}>
+        <span>{item.label}</span>{hasChildren && !mobile && <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.5" d="m4 6 4 4 4-4" /></svg>}
+      </a>
+      {hasChildren && <MenuTree items={items} parentId={item.id} currentPath={currentPath} mobile={mobile} depth={depth + 1} visitedIds={[...visitedIds, item.id]} />}
+    </li>;
+  })}
+</ul>

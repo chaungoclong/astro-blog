@@ -1,0 +1,276 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { dbService } from '../../../lib/db';
+
+const INDENT_PX_PER_LEVEL = 20;
+const CHILD_PREFIX = '↳ ';
+
+const rawCategories = dbService.getCategories();
+
+/** Build a depth-first ordered flat list so children appear directly below their parent. */
+function buildTreeOrder(categories: typeof rawCategories): (typeof rawCategories[number] & { depth: number })[] {
+  const childrenMap = new Map<number | null, typeof rawCategories>();
+  for (const cat of categories) {
+    const key = cat.parent_id;
+    if (!childrenMap.has(key)) childrenMap.set(key, []);
+    childrenMap.get(key)!.push(cat);
+  }
+  const result: (typeof rawCategories[number] & { depth: number })[] = [];
+  function walk(parentId: number | null, depth: number) {
+    const children = childrenMap.get(parentId) || [];
+    for (const child of children) {
+      result.push({ ...child, depth });
+      walk(child.id, depth + 1);
+    }
+  }
+  walk(null, 0);
+  return result;
+}
+
+const categories = buildTreeOrder(rawCategories);
+
+/** Render indent prefix for the parent select dropdown. */
+const indentLabel = (name: string, depth: number) => depth > 0 ? '— '.repeat(depth) + name : name;
+---
+
+<AdminLayout title="Quản lý chuyên mục" activeNav="categories">
+  
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Add Category Form Card (1 col) -->
+    <div class="bg-white rounded-xl p-5 border border-zinc-200/90 shadow-2xs h-fit space-y-4">
+      <div class="border-b border-zinc-100 pb-3">
+        <h2 id="category-form-title" class="text-sm font-extrabold text-zinc-900 tracking-tight">Thêm chuyên mục mới</h2>
+        <p class="text-[11px] text-zinc-500 mt-0.5">Tạo hoặc chỉnh sửa phân loại bài viết</p>
+      </div>
+
+      <form id="add-category-form" class="space-y-3.5">
+        <input id="cat-id" name="id" type="hidden" />
+        <div>
+          <label for="cat-name" class="block text-xs font-semibold text-zinc-700 mb-1">
+            Tên chuyên mục <span class="text-red-500">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="cat-name" 
+            name="name" 
+            required 
+            placeholder="Ví dụ: DevOps & Cloud" 
+            class="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+          />
+        </div>
+
+        <div><label for="cat-parent" class="mb-1 block text-xs font-semibold text-zinc-700">Chuyên mục cha</label><select id="cat-parent" name="parent_id" class="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs"><option value="">Cấp cao nhất</option>{categories.map((category) => <option value={category.id}>{indentLabel(category.name, category.depth)}</option>)}</select></div>
+
+        <div>
+          <label for="cat-slug" class="block text-xs font-semibold text-zinc-700 mb-1">
+            Đường dẫn tĩnh (Slug URL)
+          </label>
+          <input 
+            type="text" 
+            id="cat-slug" 
+            name="slug" 
+            placeholder="devops-cloud (tự tạo nếu để trống)" 
+            class="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-mono focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+          />
+        </div>
+
+        <div>
+          <label for="cat-desc" class="block text-xs font-semibold text-zinc-700 mb-1">
+            Mô tả chuyên mục
+          </label>
+          <textarea 
+            id="cat-desc" 
+            name="description" 
+            rows="3" 
+            placeholder="Mô tả tóm lược chủ đề này..." 
+            class="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+          ></textarea>
+        </div>
+
+        <button 
+          type="submit" 
+          id="cat-submit-btn"
+          class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-2xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          <span id="cat-btn-text">Thêm chuyên mục</span>
+        </button>
+        <button id="cat-cancel-edit" type="button" class="admin-secondary-btn w-full" style="display:none">Hủy chỉnh sửa</button>
+      </form>
+    </div>
+
+    <!-- Category List Table Card (2 cols) -->
+    <div class="lg:col-span-2 bg-white rounded-xl border border-zinc-200/90 shadow-2xs overflow-hidden">
+      <div class="px-5 py-4 border-b border-zinc-200/80 flex items-center justify-between bg-zinc-50/50">
+        <div>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-800">
+            Danh sách chuyên mục hiện tại
+          </h2>
+          <p class="text-[11px] text-zinc-400 mt-0.5">Tổng cộng {categories.length} chuyên mục bài viết</p>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-zinc-50/80 border-b border-zinc-200 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+              <th class="py-3 px-5">Tên & Mô tả</th>
+              <th class="py-3 px-4">Đường dẫn (Slug)</th>
+              <th class="py-3 px-4 text-center">Số bài viết</th>
+              <th class="py-3 px-5 text-right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-100">
+            {categories.map((cat) => (
+              <tr class="hover:bg-zinc-50/80 transition-colors" data-category-row={cat.id}>
+                <td class="py-3.5 px-5">
+                  <span class="font-bold text-zinc-900 block" style={`padding-left:${cat.depth * INDENT_PX_PER_LEVEL}px`}>{cat.depth > 0 ? CHILD_PREFIX : ''}{cat.name}</span>
+                  {cat.description && (
+                    <span class="text-[11px] text-zinc-500 mt-0.5 line-clamp-1">{cat.description}</span>
+                  )}
+                </td>
+                <td class="py-3.5 px-4 font-mono text-[11px] text-zinc-500">
+                  /category/{cat.slug}
+                </td>
+                <td class="py-3.5 px-4 text-center">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold font-mono bg-blue-50 text-blue-700 border border-blue-100">
+                    {cat.post_count || 0} bài
+                  </span>
+                </td>
+                <td class="py-3.5 px-5 text-right">
+                  <div class="flex justify-end gap-2"><button type="button" class="edit-cat-btn admin-icon-btn" data-id={cat.id} data-name={cat.name} data-slug={cat.slug} data-description={cat.description || ''} data-parent-id={cat.parent_id || ''}>Sửa</button><button 
+                    type="button" data-id={cat.id} data-name={cat.name} data-post-count={cat.total_post_count || 0}
+                    title={cat.total_post_count ? `Không thể xóa: đang có ${cat.total_post_count} bài viết sử dụng` : 'Xóa chuyên mục'}
+                    disabled={Boolean(cat.total_post_count)}
+                    class="delete-cat-btn admin-icon-btn text-red-700 disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button></div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </div>
+
+  <dialog id="delete-category-dialog" class="m-auto w-[min(28rem,calc(100%-2rem))] rounded-xl border border-slate-200 bg-white p-0 shadow-xl backdrop:bg-slate-900/60 backdrop:backdrop-blur-xs" aria-labelledby="delete-category-title">
+    <div class="p-6">
+      <p class="text-xs font-semibold uppercase tracking-wider text-red-600">Hành động không thể hoàn tác</p>
+      <h2 id="delete-category-title" class="mt-1 text-base font-bold text-slate-900">Xóa chuyên mục?</h2>
+      <p id="delete-category-message" class="mt-3 text-xs text-slate-600 leading-relaxed"></p>
+      <div class="mt-6 flex justify-end gap-2">
+        <button id="cancel-delete-category" type="button" class="admin-secondary-btn">Hủy</button>
+        <button id="confirm-delete-category" type="button" class="admin-primary-btn bg-red-600 hover:bg-red-700">Xóa chuyên mục</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    import { slugify } from '../../../lib/utils';
+
+    const form = document.getElementById('add-category-form') as HTMLFormElement;
+    const nameInput = document.getElementById('cat-name') as HTMLInputElement;
+    const slugInput = document.getElementById('cat-slug') as HTMLInputElement;
+    const submitBtn = document.getElementById('cat-submit-btn') as HTMLButtonElement;
+    const btnText = document.getElementById('cat-btn-text') as HTMLSpanElement;
+    const idInput = document.getElementById('cat-id') as HTMLInputElement;
+    const parentInput = document.getElementById('cat-parent') as HTMLSelectElement;
+    const descriptionInput = document.getElementById('cat-desc') as HTMLTextAreaElement;
+    const formTitle = document.getElementById('category-form-title') as HTMLElement;
+    const cancelEdit = document.getElementById('cat-cancel-edit') as HTMLButtonElement;
+    const deleteDialog = document.getElementById('delete-category-dialog') as HTMLDialogElement;
+    const deleteMessage = document.getElementById('delete-category-message') as HTMLElement;
+    let pendingDeleteId = '';
+    const toast = (message: string, type: 'success' | 'error' | 'info' = 'info') => (window as any).showAdminToast?.(message, type);
+    const flash = (message: string, type: 'success' | 'error' | 'info' = 'info') => (window as any).setAdminFlash?.(message, type);
+
+    nameInput?.addEventListener('input', () => {
+      if (!slugInput.dataset.manual) {
+        slugInput.value = slugify(nameInput.value);
+      }
+    });
+
+    slugInput?.addEventListener('input', () => {
+      slugInput.dataset.manual = 'true';
+    });
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!form.reportValidity()) {
+        toast('Vui lòng kiểm tra các trường bắt buộc được đánh dấu *.', 'error');
+        form.querySelector<HTMLElement>(':invalid')?.focus();
+        return;
+      }
+      submitBtn.disabled = true;
+      btnText.textContent = idInput.value ? 'Đang lưu...' : 'Đang thêm...';
+
+      const formData = new FormData(form);
+      const name = formData.get('name');
+      const slug = formData.get('slug') || slugify(name as string);
+      const description = formData.get('description');
+      const parent_id = formData.get('parent_id');
+
+      try {
+        const res = await fetch(idInput.value ? `/api/categories/${idInput.value}` : '/api/categories', {
+          method: idInput.value ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, slug, description, parent_id }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          flash(idInput.value ? 'Đã cập nhật chuyên mục.' : 'Đã thêm chuyên mục thành công.', 'success');
+          window.location.reload();
+        } else {
+          toast(data.message || 'Lỗi khi thêm chuyên mục.', 'error');
+          submitBtn.disabled = false;
+          btnText.textContent = idInput.value ? 'Lưu thay đổi' : 'Thêm chuyên mục';
+        }
+      } catch {
+        toast('Lỗi kết nối khi thêm chuyên mục.', 'error');
+        submitBtn.disabled = false;
+        btnText.textContent = idInput.value ? 'Lưu thay đổi' : 'Thêm chuyên mục';
+      }
+    });
+
+    const resetForm = () => { form.reset(); idInput.value = ''; slugInput.dataset.manual = ''; formTitle.textContent = 'Thêm chuyên mục mới'; btnText.textContent = 'Thêm chuyên mục'; cancelEdit.style.display = 'none'; };
+    cancelEdit?.addEventListener('click', resetForm);
+    document.querySelectorAll<HTMLButtonElement>('.edit-cat-btn').forEach((button) => button.addEventListener('click', () => { idInput.value = button.dataset.id || ''; nameInput.value = button.dataset.name || ''; slugInput.value = button.dataset.slug || ''; slugInput.dataset.manual = 'true'; descriptionInput.value = button.dataset.description || ''; parentInput.value = button.dataset.parentId || ''; formTitle.textContent = 'Chỉnh sửa chuyên mục'; btnText.textContent = 'Lưu thay đổi'; cancelEdit.style.display = ''; nameInput.focus(); }));
+
+    document.querySelectorAll('.delete-cat-btn').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        const button = e.currentTarget as HTMLButtonElement;
+        if (button.disabled) return;
+        pendingDeleteId = button.dataset.id || '';
+        deleteMessage.textContent = `Chuyên mục “${button.dataset.name || ''}” sẽ bị xóa. Các chuyên mục con sẽ được đưa về cấp cao nhất.`;
+        deleteDialog.showModal();
+      });
+    });
+    document.getElementById('cancel-delete-category')?.addEventListener('click', () => deleteDialog.close());
+    document.getElementById('confirm-delete-category')?.addEventListener('click', async () => {
+        try {
+          const res = await fetch(`/api/categories/${pendingDeleteId}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            flash('Đã xóa chuyên mục thành công.', 'success');
+            window.location.reload();
+          } else {
+            toast(data.message || 'Lỗi khi xóa chuyên mục.', 'error');
+          }
+        } catch {
+          toast('Lỗi kết nối khi xóa chuyên mục.', 'error');
+        }
+        deleteDialog.close();
+    });
+  </script>
+
+</AdminLayout>

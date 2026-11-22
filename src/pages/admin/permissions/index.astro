@@ -1,0 +1,40 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { dbService } from '../../../lib/db';
+const permissions = dbService.getPermissions();
+const DESCRIPTIONS: Record<string,string> = { 
+  'posts.manage': 'Tạo, sửa, xuất bản và xóa bài viết.', 
+  'pages.manage': 'Quản lý các trang nội dung tĩnh.', 
+  'categories.manage': 'Quản lý cây chuyên mục.', 
+  'media.manage': 'Quản lý File Manager và upload.', 
+  'menus.manage': 'Quản lý điều hướng public.', 
+  'settings.manage': 'Thay đổi cấu hình và nhận diện website.', 
+  'users.manage': 'Tạo, xóa và gán vai trò người dùng.', 
+  'roles.manage': 'Tạo vai trò và phân phối permissions.' 
+};
+---
+<AdminLayout title="Permissions" activeNav="permissions">
+  <div class="admin-page-heading">
+    <div>
+      <p class="admin-eyebrow">Access / Capabilities</p>
+      <h2>Permission catalog</h2>
+      <p>Danh mục capability ổn định của hệ thống. Gán permission cho vai trò tại màn Vai trò.</p>
+    </div>
+    <a href="/admin/roles" class="admin-primary-btn">Cấu hình vai trò →</a>
+  </div>
+  
+  <section class="grid gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
+    {permissions.map((permission, index) => (
+      <article class="admin-panel p-5 sm:p-6 hover:shadow-sm transition-shadow">
+        <div class="flex items-start justify-between gap-3">
+          <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 font-mono font-bold text-xs flex items-center justify-center">
+            {String(index + 1).padStart(2, '0')}
+          </span>
+          <span class="admin-status published">Capability</span>
+        </div>
+        <code class="mt-4 block text-sm font-bold text-slate-900 font-mono">{permission}</code>
+        <p class="mt-2 text-xs leading-5 text-slate-500">{DESCRIPTIONS[permission] || 'Capability nội bộ của hệ thống.'}</p>
+      </article>
+    ))}
+  </section>
+</AdminLayout>

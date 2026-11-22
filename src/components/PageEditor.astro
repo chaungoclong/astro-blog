@@ -1,0 +1,71 @@
+---
+import type { Page } from '../lib/db';
+interface Props { page?: Page; }
+const { page } = Astro.props;
+const isEdit = Boolean(page);
+---
+
+<form id="page-editor" class="space-y-6" data-page-id={page?.id || ''}>
+  <div class="admin-panel grid gap-5 p-5 sm:p-7">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="admin-eyebrow">Nội dung tĩnh</p>
+        <h2 class="text-xl font-black tracking-tight text-zinc-950">{isEdit ? 'Chỉnh sửa trang' : 'Tạo trang mới'}</h2>
+      </div>
+      {isEdit && <a href={`/${page!.slug}`} target="_blank" class="admin-secondary-btn">Xem trang ↗</a>}
+    </div>
+    <div class="grid gap-5 md:grid-cols-3">
+      <label class="md:col-span-2 admin-field"><span>Tiêu đề trang <em aria-label="bắt buộc">*</em></span><input name="title" required aria-required="true" value={page?.title || ''} placeholder="Ví dụ: Liên hệ" /></label>
+      <label class="admin-field"><span>Đường dẫn</span><div class="input-prefix"><b>/</b><input name="slug" value={page?.slug || ''} placeholder="lien-he" /></div></label>
+    </div>
+    <label class="admin-field"><span>Mô tả ngắn</span><textarea name="excerpt" rows="2" placeholder="Mô tả dùng cho SEO và phần mở đầu">{page?.excerpt || ''}</textarea></label>
+  </div>
+
+  <div class="grid gap-6 xl:grid-cols-[1fr_280px]">
+    <div class="admin-panel p-5 sm:p-7">
+      <label class="admin-field"><span>Nội dung (Markdown)</span><textarea name="content" rows="20" class="font-mono text-sm leading-7" placeholder="# Tiêu đề\n\nNội dung trang của bạn...">{page?.content || ''}</textarea></label>
+    </div>
+    <aside class="admin-panel admin-save-panel h-fit space-y-5 p-5">
+      <div><p class="admin-eyebrow">Xuất bản</p><h3 class="font-extrabold text-zinc-950">Trạng thái & hiển thị</h3></div>
+      <label class="admin-field"><span>Trạng thái</span><select name="status"><option value="draft" selected={page?.status !== 'published'}>Bản nháp</option><option value="published" selected={page?.status === 'published'}>Đã xuất bản</option></select></label>
+      <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-700"><input type="checkbox" name="show_in_nav" checked={Boolean(page?.show_in_nav)} class="mt-1 h-4 w-4 accent-cyan-600" /><span><b class="block text-zinc-900">Hiện trên menu</b><small>Đưa liên kết vào điều hướng đầu/cuối trang.</small></span></label>
+      <button type="submit" class="admin-primary-btn w-full"><span>{isEdit ? 'Lưu thay đổi' : 'Tạo trang'}</span><span aria-hidden="true">→</span></button>
+      <p id="page-form-message" class="text-center text-xs text-zinc-500" aria-live="polite"></p>
+    </aside>
+  </div>
+</form>
+
+<script>
+  const form = document.querySelector('#page-editor') as HTMLFormElement;
+  const title = form?.elements.namedItem('title') as HTMLInputElement;
+  const slug = form?.elements.namedItem('slug') as HTMLInputElement;
+  const message = document.querySelector('#page-form-message') as HTMLElement;
+  const toast = (text: string, type: 'success' | 'error' | 'info' = 'info') => (window as any).showAdminToast?.(text, type);
+  const flash = (text: string, type: 'success' | 'error' | 'info' = 'info') => (window as any).setAdminFlash?.(text, type);
+  const slugify = (value: string) => value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').replace(/[^a-z0-9 -]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-');
+  let slugTouched = Boolean(slug?.value);
+  title?.addEventListener('input', () => { if (!slugTouched) slug.value = slugify(title.value); });
+  slug?.addEventListener('input', () => { slugTouched = true; });
+  title?.addEventListener('invalid', () => { message.textContent = 'Vui lòng nhập tiêu đề trang trước khi lưu.'; });
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!form.reportValidity()) {
+      message.textContent = 'Vui lòng kiểm tra các trường bắt buộc được đánh dấu *.';
+      toast(message.textContent, 'error');
+      form.querySelector<HTMLElement>(':invalid')?.focus();
+      return;
+    }
+    const submit = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+    const data = new FormData(form);
+    const payload = { title: String(data.get('title') || ''), slug: String(data.get('slug') || ''), excerpt: String(data.get('excerpt') || ''), content: String(data.get('content') || ''), status: String(data.get('status') || 'draft'), show_in_nav: data.has('show_in_nav') };
+    const id = form.dataset.pageId;
+    submit.disabled = true; message.textContent = 'Đang lưu...';
+    try {
+      const response = await fetch(id ? `/api/pages/${id}` : '/api/pages', { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.message || 'Không thể lưu trang.');
+      flash(id ? 'Đã cập nhật trang thành công.' : 'Đã tạo trang thành công.', 'success');
+      window.location.href = id ? '/admin/pages' : `/admin/pages/${result.id}/edit`;
+    } catch (error: any) { message.textContent = error.message; toast(error.message, 'error'); submit.disabled = false; }
+  });
+</script>

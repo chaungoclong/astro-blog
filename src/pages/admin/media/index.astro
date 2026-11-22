@@ -1,0 +1,212 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { dbService } from '../../../lib/db';
+import { listMedia } from '../../../lib/media';
+
+const ACCEPTED_FILE_TYPES = 'image/png,image/jpeg,image/webp,image/gif,application/pdf,application/zip,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation';
+const ROOT_FOLDER = '';
+const ROOT_FILTER = '__root';
+const FOLDER_SEPARATOR = '/';
+const metadata = new Map(dbService.getMediaMetadata().map((item) => [item.filename, item]));
+const media = (await listMedia()).map((item) => ({ ...item, folder: metadata.get(item.filename)?.folder || ROOT_FOLDER, originalName: metadata.get(item.filename)?.original_name || item.filename, references: dbService.getMediaReferences(item.url) }));
+const folders = [...new Set([...dbService.getMediaFolders(), ...media.map((item) => item.folder).filter(Boolean)])].sort();
+const rootMediaCount = media.filter((item) => !item.folder).length;
+const folderLabel = (folder: string) => folder.split(FOLDER_SEPARATOR).at(-1) || folder;
+const folderDepth = (folder: string) => folder.split(FOLDER_SEPARATOR).length - 1;
+const folderParent = (folder: string) => folder.includes(FOLDER_SEPARATOR) ? folder.slice(0, folder.lastIndexOf(FOLDER_SEPARATOR)) : ROOT_FILTER;
+const hasFolderChildren = (folder: string) => folders.some((candidate) => folderParent(candidate) === folder);
+---
+
+<AdminLayout title="Media Library" activeNav="media">
+  <section class="space-y-5">
+    <div class="admin-page-heading">
+      <div><p class="admin-eyebrow">Tài nguyên nội dung</p><h2>File Manager</h2><p>Quản lý tệp và thư mục như một ổ đĩa trực tuyến.</p></div>
+      <button id="upload-media-shortcut" type="button" class="admin-primary-btn">Tải tệp lên</button><input id="media-file" type="file" accept={ACCEPTED_FILE_TYPES} class="sr-only" />
+    </div>
+    <p id="media-message" class="text-sm text-zinc-500" aria-live="polite">Ảnh tối đa 5 MB · PDF, ZIP và tài liệu Office tối đa 20 MB</p>
+
+    <div id="media-explorer" class="grid min-h-[32rem] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm lg:grid-cols-[16rem_minmax(0,1fr)]">
+      <aside id="folder-explorer" class="border-b border-zinc-200 bg-zinc-50/80 p-3 lg:border-b-0 lg:border-r" aria-label="Thư mục Media Library">
+        <div class="mb-2 flex items-center justify-between px-2">
+          <h3 class="text-xs font-black uppercase tracking-[.12em] text-zinc-500">Thư mục</h3>
+          <button id="folder-actions" type="button" class="admin-icon-btn grid size-9 place-items-center" aria-label="Mở thao tác thư mục" aria-haspopup="menu" aria-expanded="false">
+            <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1" fill="currentColor"></circle><circle cx="12" cy="12" r="1" fill="currentColor"></circle><circle cx="19" cy="12" r="1" fill="currentColor"></circle></svg>
+          </button>
+        </div>
+        <nav id="folder-list" class="flex gap-1 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible" aria-label="Danh sách thư mục">
+          <div class="folder-tree-entry" data-folder-entry={ROOT_FILTER} data-folder-path="" style="--folder-depth:0"><button type="button" class="folder-toggle" aria-label="Thu gọn hoặc mở rộng Ổ đĩa của tôi" aria-expanded="true"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="m5 3 5 5-5 5"/></svg></button><button type="button" class="folder-row is-active" data-folder-filter={ROOT_FILTER} aria-current="page"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-10Z"/></svg><span>Ổ đĩa của tôi</span><span class="folder-count">{rootMediaCount}</span></button></div>
+          {folders.map((folder) => <div class="folder-tree-entry" data-folder-entry={folder} data-folder-path={folder} style={`--folder-depth:${folderDepth(folder) + 1}`}><button type="button" class:list={['folder-toggle', !hasFolderChildren(folder) && 'invisible']} aria-label={`Thu gọn hoặc mở rộng ${folderLabel(folder)}`} aria-expanded="false"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="m5 3 5 5-5 5"/></svg></button><button type="button" class="folder-row" data-folder-filter={folder} title={folder}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-10Z"/></svg><span class="min-w-0 flex-1 truncate text-left">{folderLabel(folder)}</span><span class="folder-count">{media.filter((item) => item.folder === folder).length}</span></button></div>)}
+        </nav>
+        <p class="mt-4 hidden px-2 text-[11px] leading-5 text-zinc-400 lg:block">Nhấp chuột phải trong vùng này để tạo thư mục.</p>
+      </aside>
+
+      <div class="min-w-0 p-4 sm:p-5">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 pb-4">
+          <div><p class="text-xs font-bold text-zinc-400">Vị trí hiện tại</p><h3 id="current-folder-title" class="mt-1 text-lg font-black text-zinc-900">Ổ đĩa của tôi</h3></div>
+          <button id="create-folder-shortcut" type="button" class="admin-secondary-btn"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Thư mục mới</button>
+        </div>
+        <div id="folder-grid" class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {folders.map((folder) => <button type="button" class="folder-tile hidden" data-folder-card={folder} data-folder-path={folder} data-parent-folder={folderParent(folder)}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-10Z"/></svg><span>{folderLabel(folder)}</span></button>)}
+        </div>
+        <div id="media-grid" class="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+          {media.map((item) => <article class="media-card overflow-hidden rounded-xl border border-zinc-200 bg-white" data-folder={item.folder}>
+            {item.type.startsWith('image/') ? <img src={item.url} alt="" class="aspect-video w-full object-cover" /> : <div class="grid aspect-video place-items-center bg-zinc-50"><svg aria-hidden="true" class="size-10 fill-none stroke-zinc-400" viewBox="0 0 24 24" stroke-width="1.5"><path d="M6 2h8l4 4v16H6V2Zm8 0v5h5M9 13h6M9 17h6"/></svg></div>}
+            <div class="space-y-3 p-3">
+              <div><strong class="block truncate text-xs text-zinc-800" title={item.originalName}>{item.originalName}</strong><code class="mt-1 block truncate text-[9px] text-zinc-400">{item.filename}</code><span class="text-[10px] text-zinc-400">{item.references.length} nơi đang dùng</span></div>
+              <select class="move-media w-full rounded-lg border border-zinc-200 bg-zinc-50 p-2 text-xs" data-file={item.filename} aria-label={`Di chuyển tệp ${item.filename}`}><option value="" selected={!item.folder}>Ổ đĩa của tôi</option>{folders.map((folder) => <option value={folder} selected={item.folder === folder}>{folder}</option>)}</select>
+              <div class="flex gap-2"><button class="admin-icon-btn copy-media flex-1" data-url={item.url}>Sao chép URL</button><button class="admin-icon-btn delete-media text-red-600" data-file={item.filename}>Xóa</button></div>
+            </div>
+          </article>)}
+        </div>
+        <div id="folder-empty-state" class="hidden py-16 text-center"><svg aria-hidden="true" class="mx-auto size-10 fill-none stroke-zinc-300" viewBox="0 0 24 24" stroke-width="1.5"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-10Z"/></svg><p class="mt-3 text-sm font-bold text-zinc-700">Thư mục đang trống</p><p class="mt-1 text-xs text-zinc-500">Tải tệp hoặc tạo thư mục con tại vị trí này.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <div id="folder-context-menu" class="fixed z-50 hidden min-w-52 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-xl" role="menu" aria-label="Thao tác thư mục">
+    <button id="context-upload-media" type="button" class="context-menu-item" role="menuitem"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 16V4m0 0L7 9m5-5 5 5M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>Tải tệp lên đây</button>
+    <button id="context-create-folder" type="button" class="context-menu-item" role="menuitem"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Tạo thư mục mới</button>
+    <div class="my-1 border-t border-zinc-100"></div>
+    <button id="context-delete-folder" type="button" class="context-menu-item text-red-600" role="menuitem"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16m-10 4v6m4-6v6M9 7l1-3h4l1 3m3 0-1 13H7L6 7"/></svg>Xóa thư mục</button>
+  </div>
+
+  <dialog id="create-folder-dialog" class="m-auto w-[min(28rem,calc(100%-2rem))] rounded-2xl bg-white p-0 shadow-2xl backdrop:bg-zinc-950/60" aria-labelledby="create-folder-title">
+    <form id="create-folder-form" method="dialog" class="p-6">
+      <p class="admin-eyebrow">Media Library</p><h2 id="create-folder-title" class="mt-1 text-xl font-black text-zinc-950">Tạo thư mục mới</h2>
+      <label class="admin-field mt-4"><span>Tạo bên trong</span><select id="new-folder-parent" name="parent"><option value="">Ổ đĩa của tôi</option>{folders.map((folder) => <option value={folder}>{folder.split(FOLDER_SEPARATOR).join(' › ')}</option>)}</select></label>
+      <label class="admin-field mt-4"><span>Tên thư mục <em>*</em></span><input id="new-folder-name" name="name" type="text" maxlength="64" autocomplete="off" required aria-required="true" placeholder="Ví dụ: Sản phẩm 2026" /></label>
+      <p id="folder-form-error" class="mt-2 min-h-5 text-xs font-semibold text-red-600" aria-live="polite"></p>
+      <div class="mt-5 flex justify-end gap-2"><button id="cancel-create-folder" type="button" class="admin-secondary-btn">Hủy</button><button id="submit-create-folder" type="submit" class="admin-primary-btn">Tạo thư mục</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="delete-folder-dialog" class="m-auto w-[min(32rem,calc(100%-2rem))] rounded-2xl bg-white p-0 shadow-2xl backdrop:bg-zinc-950/60" aria-labelledby="delete-folder-title">
+    <div class="p-6"><p class="admin-eyebrow text-red-600">Hành động không thể hoàn tác</p><h2 id="delete-folder-title" class="mt-1 text-xl font-black text-zinc-950">Xóa thư mục?</h2><p id="delete-folder-message" class="mt-3 text-sm leading-6 text-zinc-600"></p><ul id="delete-folder-references" class="mt-3 max-h-44 list-disc space-y-1 overflow-y-auto pl-5 text-sm text-red-700"></ul><div class="mt-6 flex justify-end gap-2"><button id="cancel-delete-folder" type="button" class="admin-secondary-btn">Hủy</button><button id="confirm-delete-folder" type="button" class="rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-60">Xóa thư mục và tệp</button></div></div>
+  </dialog>
+
+  <div id="delete-media-dialog" class="fixed inset-0 z-[80] hidden bg-zinc-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="delete-dialog-title"><div class="mx-auto mt-[12vh] max-w-lg rounded-2xl bg-white p-6 shadow-2xl"><p class="admin-eyebrow text-red-600">Hành động không thể hoàn tác</p><h2 id="delete-dialog-title" class="mt-1 text-xl font-black">Xóa tệp khỏi thư viện?</h2><p id="delete-dialog-message" class="mt-3 text-sm leading-6 text-zinc-600">Tệp sẽ bị xóa vĩnh viễn.</p><ul id="delete-reference-list" class="mt-3 max-h-44 list-disc space-y-1 overflow-y-auto pl-5 text-sm text-zinc-700"></ul><div class="mt-6 flex justify-end gap-2"><button id="cancel-delete-media" class="admin-secondary-btn">Hủy</button><button id="confirm-delete-media" class="rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700">Xóa vĩnh viễn</button></div></div></div>
+
+  <script define:vars={{ media, folders, ROOT_FILTER }}>
+    const MEDIA_API = '/api/media'; const MOVE_API = '/api/media/move'; const FOLDER_API = '/api/media/folders'; const FORCE_QUERY = '?force=true';
+    const POST_METHOD = 'POST'; const PUT_METHOD = 'PUT'; const DELETE_METHOD = 'DELETE'; const JSON_HEADERS = { 'Content-Type': 'application/json' };
+    const RELOAD_DELAY_MS = 500; const MENU_EDGE_GAP_PX = 12; const MENU_KEY = 'ContextMenu'; const ESCAPE_KEY = 'Escape'; const EMPTY_FOLDER = ''; const FOLDER_SEPARATOR = '/'; const FOLDER_SORT_LOCALE = 'vi'; const FOLDER_QUERY_PARAM = 'folder'; const TREE_STATE_KEY = 'file-manager-expanded-folders';
+    const toast = (message, type = 'info') => window.showAdminToast?.(message, type);
+    const fileInput = document.getElementById('media-file'); const mediaExplorer = document.getElementById('media-explorer'); const folderList = document.getElementById('folder-list');
+    const currentFolderTitle = document.getElementById('current-folder-title'); const folderGrid = document.getElementById('folder-grid'); const emptyState = document.getElementById('folder-empty-state'); const contextMenu = document.getElementById('folder-context-menu');
+    const folderActions = document.getElementById('folder-actions'); const createDialog = document.getElementById('create-folder-dialog'); const createForm = document.getElementById('create-folder-form');
+    const folderInput = document.getElementById('new-folder-name'); const folderParentSelect = document.getElementById('new-folder-parent'); const folderFormError = document.getElementById('folder-form-error'); const submitFolder = document.getElementById('submit-create-folder');
+    const deleteDialog = document.getElementById('delete-media-dialog'); const referenceList = document.getElementById('delete-reference-list');
+    const deleteFolderDialog = document.getElementById('delete-folder-dialog'); const deleteFolderMessage = document.getElementById('delete-folder-message'); const deleteFolderReferences = document.getElementById('delete-folder-references'); const confirmDeleteFolder = document.getElementById('confirm-delete-folder');
+    let selectedFolder = ROOT_FILTER; let contextParentFolder = EMPTY_FOLDER; let uploadTargetFolder = EMPTY_FOLDER; let uploadReturnFolder = ROOT_FILTER; let pendingDeleteFolder = EMPTY_FOLDER; let pendingFolderHasReferences = false; let pendingDelete = EMPTY_FOLDER; let forceDelete = false; const expandedFolders = new Set(JSON.parse(sessionStorage.getItem(TREE_STATE_KEY) || JSON.stringify([ROOT_FILTER])));
+
+    function displayFolderName(folder) { if (folder === ROOT_FILTER || !folder) return 'Ổ đĩa của tôi'; return 'Ổ đĩa của tôi › ' + folder.split(FOLDER_SEPARATOR).join(' › '); }
+    function activeParentFolder() { return selectedFolder === ROOT_FILTER ? EMPTY_FOLDER : selectedFolder; }
+    function parentFolder(folder) { return folder.includes(FOLDER_SEPARATOR) ? folder.slice(0, folder.lastIndexOf(FOLDER_SEPARATOR)) : ROOT_FILTER; }
+    function persistTreeState() { sessionStorage.setItem(TREE_STATE_KEY, JSON.stringify([...expandedFolders])); }
+    function expandAncestors(folder) { let parent = folder === ROOT_FILTER ? ROOT_FILTER : parentFolder(folder); while (parent) { expandedFolders.add(parent); if (parent === ROOT_FILTER) break; parent = parentFolder(parent); } persistTreeState(); }
+    function renderTreeState() { document.querySelectorAll('.folder-tree-entry').forEach((entry) => { const folder = entry.dataset.folderEntry; let parent = folder === ROOT_FILTER ? null : parentFolder(folder); let visible = true; while (parent) { if (!expandedFolders.has(parent)) { visible = false; break; } if (parent === ROOT_FILTER) break; parent = parentFolder(parent); } entry.classList.toggle('hidden', !visible); const toggle = entry.querySelector('.folder-toggle'); if (toggle) { const expanded = expandedFolders.has(folder); toggle.setAttribute('aria-expanded', String(expanded)); toggle.classList.toggle('is-expanded', expanded); } }); }
+    function sortFolderRows() {
+      folders.sort((left, right) => left.localeCompare(right, FOLDER_SORT_LOCALE));
+      const entriesByFolder = new Map(Array.from(folderList.querySelectorAll('.folder-tree-entry')).map((entry) => [entry.dataset.folderEntry, entry]));
+      folders.forEach((folder) => { const entry = entriesByFolder.get(folder); if (entry) folderList.appendChild(entry); });
+    }
+    function selectFolder(folder, updateUrl = true) {
+      selectedFolder = folder; expandAncestors(folder); let visibleCount = 0;
+      document.querySelectorAll('.folder-row').forEach((row) => { const active = row.dataset.folderFilter === folder; row.classList.toggle('is-active', active); if (active) row.setAttribute('aria-current', 'page'); else row.removeAttribute('aria-current'); });
+      const logicalFolder = folder === ROOT_FILTER ? EMPTY_FOLDER : folder;
+      document.querySelectorAll('.media-card').forEach((card) => { const visible = (card.dataset.folder || EMPTY_FOLDER) === logicalFolder; card.classList.toggle('hidden', !visible); if (visible) visibleCount += 1; });
+      document.querySelectorAll('.folder-tile').forEach((card) => { const visible = card.dataset.parentFolder === folder; card.classList.toggle('hidden', !visible); if (visible) visibleCount += 1; });
+      currentFolderTitle.textContent = displayFolderName(folder); emptyState.classList.toggle('hidden', visibleCount > 0);
+      if (updateUrl) { const url = new URL(window.location.href); if (folder === ROOT_FILTER) url.searchParams.delete(FOLDER_QUERY_PARAM); else url.searchParams.set(FOLDER_QUERY_PARAM, folder); window.history.replaceState({}, '', url); }
+      renderTreeState();
+    }
+    function closeContextMenu() { contextMenu.classList.add('hidden'); folderActions.setAttribute('aria-expanded', 'false'); }
+    function openContextMenu(x, y) { const deleteFolderAction = document.getElementById('context-delete-folder'); deleteFolderAction.classList.toggle('hidden', !contextParentFolder); contextMenu.classList.remove('hidden'); const bounds = contextMenu.getBoundingClientRect(); const left = Math.min(x, window.innerWidth - bounds.width - MENU_EDGE_GAP_PX); const top = Math.min(y, window.innerHeight - bounds.height - MENU_EDGE_GAP_PX); contextMenu.style.left = Math.max(MENU_EDGE_GAP_PX, left) + 'px'; contextMenu.style.top = Math.max(MENU_EDGE_GAP_PX, top) + 'px'; folderActions.setAttribute('aria-expanded', 'true'); document.getElementById('context-upload-media').focus(); }
+    function openCreateDialog() { closeContextMenu(); folderFormError.textContent = EMPTY_FOLDER; createForm.reset(); folderParentSelect.value = contextParentFolder; createDialog.showModal(); folderInput.focus(); }
+    function chooseUpload(folder, returnFolder) { closeContextMenu(); uploadTargetFolder = folder; uploadReturnFolder = returnFolder; fileInput.click(); }
+    function reloadAtFolder(folder) { const url = new URL(window.location.href); if (folder === ROOT_FILTER || !folder) url.searchParams.delete(FOLDER_QUERY_PARAM); else url.searchParams.set(FOLDER_QUERY_PARAM, folder); window.location.href = url.toString(); }
+
+    folderList?.addEventListener('click', (event) => { const row = event.target.closest('.folder-row'); if (row) selectFolder(row.dataset.folderFilter || ROOT_FILTER); });
+    folderList?.addEventListener('click', (event) => { const toggle = event.target.closest('.folder-toggle'); if (!toggle) return; const folder = toggle.closest('.folder-tree-entry')?.dataset.folderEntry; if (!folder) return; if (expandedFolders.has(folder)) expandedFolders.delete(folder); else expandedFolders.add(folder); persistTreeState(); renderTreeState(); });
+    folderGrid?.addEventListener('click', (event) => { const card = event.target.closest('.folder-tile'); if (card) selectFolder(card.dataset.folderCard); });
+    mediaExplorer?.addEventListener('contextmenu', (event) => { event.preventDefault(); const target = event.target.closest('[data-folder-path]'); contextParentFolder = target ? target.dataset.folderPath : activeParentFolder(); openContextMenu(event.clientX, event.clientY); });
+    mediaExplorer?.addEventListener('keydown', (event) => { if (event.key === MENU_KEY || (event.shiftKey && event.key === 'F10')) { event.preventDefault(); const target = event.target.closest('[data-folder-path]'); contextParentFolder = target ? target.dataset.folderPath : activeParentFolder(); const bounds = event.target.getBoundingClientRect(); openContextMenu(bounds.left, bounds.bottom); } });
+    folderActions?.addEventListener('click', () => { contextParentFolder = activeParentFolder(); const bounds = folderActions.getBoundingClientRect(); openContextMenu(bounds.right, bounds.bottom); });
+    document.getElementById('context-create-folder')?.addEventListener('click', openCreateDialog); document.getElementById('create-folder-shortcut')?.addEventListener('click', () => { contextParentFolder = activeParentFolder(); openCreateDialog(); });
+    document.getElementById('context-upload-media')?.addEventListener('click', () => chooseUpload(contextParentFolder, contextParentFolder || ROOT_FILTER));
+    document.getElementById('upload-media-shortcut')?.addEventListener('click', () => chooseUpload(activeParentFolder(), selectedFolder));
+    document.getElementById('cancel-create-folder')?.addEventListener('click', () => createDialog.close());
+    document.addEventListener('pointerdown', (event) => { if (!contextMenu.contains(event.target) && event.target !== folderActions) closeContextMenu(); }); document.addEventListener('keydown', (event) => { if (event.key === ESCAPE_KEY) closeContextMenu(); });
+
+    createForm?.addEventListener('submit', async (event) => {
+      event.preventDefault(); const name = folderInput.value.trim(); const parent = folderParentSelect.value;
+      if (!name) { folderFormError.textContent = 'Nhập tên thư mục trước khi tạo.'; folderInput.focus(); return; }
+      const requestedFolder = parent ? parent + FOLDER_SEPARATOR + name : name;
+      if (folders.includes(requestedFolder)) { folderFormError.textContent = 'Thư mục này đã tồn tại.'; folderInput.focus(); return; }
+      submitFolder.disabled = true; submitFolder.textContent = 'Đang tạo…';
+      const response = await fetch(FOLDER_API, { method: POST_METHOD, headers: JSON_HEADERS, body: JSON.stringify({ name, parent }) }); const data = await response.json();
+      submitFolder.disabled = false; submitFolder.textContent = 'Tạo thư mục'; if (!response.ok) { folderFormError.textContent = data.message || 'Không thể tạo thư mục.'; return; }
+      const folder = data.folder; folders.push(folder);
+      const entry = document.createElement('div'); entry.className = 'folder-tree-entry'; entry.dataset.folderEntry = folder; entry.dataset.folderPath = folder; entry.style.setProperty('--folder-depth', String(folder.split(FOLDER_SEPARATOR).length)); const toggle = document.createElement('button'); toggle.type = 'button'; toggle.className = 'folder-toggle invisible'; toggle.setAttribute('aria-label', 'Thu gọn hoặc mở rộng ' + name); toggle.setAttribute('aria-expanded', 'false'); toggle.innerHTML = '<svg aria-hidden="true" viewBox="0 0 16 16"><path d="m5 3 5 5-5 5"/></svg>'; const row = document.createElement('button'); row.type = 'button'; row.className = 'folder-row'; row.dataset.folderFilter = folder; row.title = folder;
+      row.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-10Z"/></svg><span class="min-w-0 flex-1 truncate text-left"></span><span class="folder-count">0</span>';
+      row.querySelector('span').textContent = name; entry.append(toggle, row); folderList.appendChild(entry); const parentEntry = [...folderList.querySelectorAll('.folder-tree-entry')].find((candidate) => candidate.dataset.folderEntry === (parent || ROOT_FILTER)); parentEntry?.querySelector('.folder-toggle')?.classList.remove('invisible'); expandedFolders.add(parent || ROOT_FILTER); persistTreeState(); sortFolderRows(); renderTreeState(); const folderCard = document.createElement('button'); folderCard.type = 'button'; folderCard.className = 'folder-tile hidden'; folderCard.dataset.folderCard = folder; folderCard.dataset.folderPath = folder; folderCard.dataset.parentFolder = parent || ROOT_FILTER; folderCard.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-10Z"/></svg><span></span>'; folderCard.querySelector('span').textContent = name; folderGrid.appendChild(folderCard); folderParentSelect.add(new Option(displayFolderName(folder), folder)); document.querySelectorAll('.move-media').forEach((select) => select.add(new Option(displayFolderName(folder), folder)));
+      createDialog.close(); selectFolder(folder); toast('Đã tạo thư mục.', 'success');
+    });
+
+    fileInput?.addEventListener('change', async () => { if (!fileInput.files?.[0]) return; const form = new FormData(); form.append('file', fileInput.files[0]); form.append('folder', uploadTargetFolder); const response = await fetch(MEDIA_API, { method: POST_METHOD, body: form }); const data = await response.json(); if (response.ok) { toast('Tải tệp lên thành công.', 'success'); setTimeout(() => reloadAtFolder(uploadReturnFolder), RELOAD_DELAY_MS); } else toast(data.message || 'Không thể tải tệp.', 'error'); fileInput.value = EMPTY_FOLDER; });
+    document.querySelectorAll('.move-media').forEach((select) => select.addEventListener('change', async () => { const response = await fetch(MOVE_API, { method: PUT_METHOD, headers: JSON_HEADERS, body: JSON.stringify({ filename: select.dataset.file, folder: select.value }) }); const data = await response.json(); if (response.ok) { select.closest('.media-card').dataset.folder = select.value; selectFolder(selectedFolder); toast('Đã di chuyển tệp.', 'success'); } else toast(data.message || 'Không thể di chuyển tệp.', 'error'); }));
+    document.querySelectorAll('.copy-media').forEach((button) => button.addEventListener('click', async () => { await navigator.clipboard.writeText(location.origin + (button.dataset.url || EMPTY_FOLDER)); toast('Đã sao chép URL tệp.', 'success'); }));
+
+    function openDelete(filename, references, mustForce) { pendingDelete = filename; forceDelete = mustForce; referenceList.replaceChildren(); document.getElementById('delete-dialog-message').textContent = references.length ? 'Tệp đang được sử dụng. Nếu xóa, các nội dung dưới đây có thể mất liên kết:' : 'Tệp chưa được tham chiếu trong bài viết hoặc trang.'; references.forEach((reference) => { const item = document.createElement('li'); item.textContent = reference.title + ' (' + reference.type + ')'; referenceList.appendChild(item); }); deleteDialog.classList.remove('hidden'); }
+    document.querySelectorAll('.delete-media').forEach((button) => button.addEventListener('click', () => { const item = media.find((entry) => entry.filename === button.dataset.file); openDelete(button.dataset.file || EMPTY_FOLDER, item?.references || [], Boolean(item?.references.length)); }));
+    document.getElementById('cancel-delete-media')?.addEventListener('click', () => deleteDialog.classList.add('hidden'));
+    document.getElementById('confirm-delete-media')?.addEventListener('click', async () => { const response = await fetch(MEDIA_API + '/' + pendingDelete + (forceDelete ? FORCE_QUERY : EMPTY_FOLDER), { method: DELETE_METHOD }); const data = await response.json(); if (response.ok) { toast('Đã xóa tệp khỏi thư viện.', 'success'); setTimeout(() => window.location.reload(), RELOAD_DELAY_MS); } else if (data.needsConfirmation) openDelete(pendingDelete, data.references, true); else toast(data.message || 'Không thể xóa tệp.', 'error'); });
+
+    async function previewFolderDelete(folder) {
+      closeContextMenu();
+      const response = await fetch(FOLDER_API, { method: DELETE_METHOD, headers: JSON_HEADERS, body: JSON.stringify({ folder, preview: true }) });
+      const data = await response.json();
+      if (!response.ok) { toast(data.message || 'Không thể kiểm tra thư mục.', 'error'); return; }
+      pendingDeleteFolder = folder; pendingFolderHasReferences = Boolean(data.references.length); deleteFolderReferences.replaceChildren();
+      deleteFolderMessage.textContent = `Thư mục “${displayFolderName(folder)}” gồm ${data.folders.length} thư mục và ${data.files.length} tệp sẽ bị xóa vĩnh viễn.`;
+      data.references.forEach((reference) => { const item = document.createElement('li'); item.textContent = reference.filename + ' — ' + reference.title + ' (' + reference.type + ')'; deleteFolderReferences.appendChild(item); });
+      if (data.references.length) deleteFolderMessage.textContent += ` Có ${data.references.length} tham chiếu nội dung; tiếp tục có thể làm mất ảnh trong bài viết hoặc trang.`;
+      deleteFolderDialog.showModal(); confirmDeleteFolder.focus();
+    }
+    document.getElementById('context-delete-folder')?.addEventListener('click', () => { if (contextParentFolder) previewFolderDelete(contextParentFolder); });
+    document.getElementById('cancel-delete-folder')?.addEventListener('click', () => deleteFolderDialog.close());
+    confirmDeleteFolder?.addEventListener('click', async () => {
+      confirmDeleteFolder.disabled = true; confirmDeleteFolder.textContent = 'Đang xóa…';
+      const response = await fetch(FOLDER_API, { method: DELETE_METHOD, headers: JSON_HEADERS, body: JSON.stringify({ folder: pendingDeleteFolder, force: pendingFolderHasReferences }) }); const data = await response.json();
+      confirmDeleteFolder.disabled = false; confirmDeleteFolder.textContent = 'Xóa thư mục và tệp';
+      if (!response.ok) { if (data.needsConfirmation) { pendingFolderHasReferences = true; deleteFolderMessage.textContent += ' Cần xác nhận xóa ảnh đang được sử dụng.'; } else toast(data.message || 'Không thể xóa thư mục.', 'error'); return; }
+      deleteFolderDialog.close(); toast('Đã xóa thư mục và tệp.', 'success'); const segments = pendingDeleteFolder.split(FOLDER_SEPARATOR); segments.pop(); const parent = segments.join(FOLDER_SEPARATOR); setTimeout(() => reloadAtFolder(parent || ROOT_FILTER), RELOAD_DELAY_MS);
+    });
+
+    const requestedFolder = new URL(window.location.href).searchParams.get(FOLDER_QUERY_PARAM);
+    const initialFolder = requestedFolder && folders.includes(requestedFolder) ? requestedFolder : ROOT_FILTER;
+    selectFolder(initialFolder, false);
+  </script>
+</AdminLayout>
+
+<style>
+  :global(.folder-tree-entry) { min-width:max-content; align-items:center; padding-left:calc(var(--folder-depth, 0) * .85rem); }
+  :global(.folder-tree-entry:not(.hidden)) { display:flex; }
+  :global(.folder-row) { display:flex; min-width:0; flex:1; align-items:center; gap:.65rem; border-radius:var(--retro-radius); padding:.62rem .7rem .62rem .25rem; color:#52525b; font-size:.75rem; font-weight:700; transition:background-color .15s,color .15s; }
+  :global(.folder-toggle) { display:grid; width:1.75rem; height:1.75rem; flex:none; place-items:center; border-radius:var(--retro-radius); color:#71717a; }
+  :global(.folder-toggle:hover) { background:#e4e4e7; }
+  :global(.folder-toggle svg) { width:.8rem; height:.8rem; fill:none; stroke:currentColor; stroke-width:2; transition:transform .15s; }
+  :global(.folder-toggle.is-expanded svg) { transform:rotate(90deg); }
+  :global(.folder-row:hover) { background:#e4e4e7; color:#18181b; }
+  :global(.folder-row.is-active) { background:#cffafe; color:#155e75; }
+  :global(.folder-row svg) { width:1rem; height:1rem; flex:none; fill:currentColor; }
+  :global(.folder-count) { margin-left:auto; border-radius:var(--retro-radius); background:rgb(255 255 255 / .75); padding:.1rem .4rem; color:#71717a; font-size:.62rem; font-weight:800; }
+  :global(.folder-tile) { display:flex; align-items:center; gap:.75rem; border:2px solid #d4d4d8; border-radius:var(--retro-radius); background:#fafafa; padding:.8rem 1rem; color:#27272a; text-align:left; font-size:.78rem; font-weight:800; }
+  :global(.folder-tile:hover) { border-color:#67e8f9; background:#ecfeff; color:#155e75; }
+  :global(.folder-tile.hidden) { display:none; }
+  :global(.folder-tile svg) { width:1.25rem; height:1.25rem; flex:none; fill:currentColor; }
+  :global(.context-menu-item) { display:flex; width:100%; align-items:center; gap:.5rem; border-radius:var(--retro-radius); padding:.5rem .75rem; text-align:left; font-size:.75rem; font-weight:700; }
+  :global(.context-menu-item:hover) { background:#f4f4f5; }
+  :global(.context-menu-item svg) { width:1rem; height:1rem; fill:none; stroke:currentColor; stroke-width:2; }
+  @media (min-width: 64rem) { :global(.folder-tree-entry) { width:100%; min-width:0; } }
+</style>

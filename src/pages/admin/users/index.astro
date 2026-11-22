@@ -1,0 +1,126 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { dbService } from '../../../lib/db';
+const users = dbService.getUsers(); const roles = dbService.getRoles();
+---
+<AdminLayout title="Người dùng" activeNav="users">
+  <div class="admin-page-heading">
+    <div>
+      <p class="admin-eyebrow">Access / Users</p>
+      <h2>Người dùng</h2>
+      <p>Tạo tài khoản và gán vai trò. Cấu hình capability nằm ở màn Vai trò.</p>
+    </div>
+    <a href="/admin/roles" class="admin-secondary-btn">Quản lý vai trò →</a>
+  </div>
+  
+  <div class="grid gap-6 xl:grid-cols-[22rem_minmax(0,1fr)]">
+    <form id="user-form" class="compact-user-form admin-panel h-fit space-y-3.5 p-5 xl:sticky xl:top-4">
+      <div>
+        <p class="admin-eyebrow">Tài khoản mới</p>
+        <h3 class="text-base font-bold text-slate-900">Tạo người dùng</h3>
+      </div>
+      <label class="admin-field"><span>Tên đăng nhập <em>*</em></span><input name="username" required aria-required="true" /></label>
+      <label class="admin-field"><span>Tên hiển thị <em>*</em></span><input name="display_name" required aria-required="true" /></label>
+      <label class="admin-field"><span>Mật khẩu <em>*</em></span><input name="password" type="password" minlength="8" required aria-required="true" autocomplete="new-password" /></label>
+      <fieldset>
+        <legend class="mb-2 text-xs font-semibold text-slate-700">Vai trò ban đầu</legend>
+        <div class="grid gap-1.5">
+          {roles.map((role) => (
+            <label class="flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
+              <input type="checkbox" name="role_ids" value={role.id} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+              <span>{role.label}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <button class="admin-primary-btn w-full" type="submit">Tạo người dùng</button>
+    </form>
+
+    <section class="admin-panel overflow-hidden">
+      <div class="border-b border-slate-100 p-5">
+        <p class="admin-eyebrow">Directory</p>
+        <h3 class="text-base font-bold text-slate-900">{users.length} tài khoản</h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Người dùng</th>
+              <th>Vai trò</th>
+              <th class="text-right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((user) => (
+              <tr data-user-id={user.id}>
+                <td>
+                  <b class="text-slate-900 font-semibold">{user.display_name}</b>
+                  <small class="text-slate-400 font-mono">@{user.username}</small>
+                </td>
+                <td>
+                  <select class="user-roles min-w-56 rounded-lg border border-slate-200 p-2 text-xs bg-white text-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100" multiple aria-label={`Vai trò của ${user.display_name}`}>
+                    {roles.map((role) => (
+                      <option value={role.id} selected={user.roles?.includes(role.name)} class="py-0.5">
+                        {role.label}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td class="text-right">
+                  <div class="flex justify-end gap-2">
+                    <button class="save-user-roles admin-secondary-btn" type="button">Cập nhật</button>
+                    <button class="delete-user admin-icon-btn text-red-600 hover:bg-red-50 hover:border-red-200" data-id={user.id}>Xóa</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const JSON_HEADERS = { 'Content-Type': 'application/json' }; 
+    const toast = (message: string, type: 'success' | 'error' = 'success') => (window as any).showAdminToast?.(message, type); 
+    const flash = (message: string) => (window as any).setAdminFlash?.(message, 'success');
+    
+    document.querySelector('#user-form')?.addEventListener('submit', async (event) => { 
+      event.preventDefault(); 
+      const form = event.currentTarget as HTMLFormElement; 
+      if (!form.reportValidity()) return toast('Kiểm tra các trường bắt buộc.', 'error'); 
+      const data = new FormData(form); 
+      const response = await fetch('/api/users', { 
+        method: 'POST', 
+        headers: JSON_HEADERS, 
+        body: JSON.stringify({ ...Object.fromEntries(data), role_ids: data.getAll('role_ids').map(Number) }) 
+      }); 
+      const result = await response.json(); 
+      if (!response.ok) return toast(result.message, 'error'); 
+      flash('Đã tạo người dùng.'); 
+      location.reload(); 
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.save-user-roles').forEach((button) => button.addEventListener('click', async () => { 
+      const row = button.closest<HTMLElement>('tr'); 
+      const select = row?.querySelector<HTMLSelectElement>('.user-roles'); 
+      const role_ids = [...(select?.selectedOptions || [])].map((option) => Number(option.value)); 
+      const response = await fetch(`/api/users/${row?.dataset.userId}`, { 
+        method: 'PUT', 
+        headers: JSON_HEADERS, 
+        body: JSON.stringify({ role_ids }) 
+      }); 
+      const result = await response.json(); 
+      toast(response.ok ? 'Đã cập nhật vai trò.' : result.message, response.ok ? 'success' : 'error'); 
+    }));
+
+    document.querySelectorAll<HTMLButtonElement>('.delete-user').forEach((button) => button.addEventListener('click', async () => { 
+      if (!confirm('Xóa người dùng này?')) return; 
+      const response = await fetch(`/api/users/${button.dataset.id}`, { method: 'DELETE' }); 
+      const result = await response.json(); 
+      if (!response.ok) return toast(result.message, 'error'); 
+      flash('Đã xóa người dùng.'); 
+      location.reload(); 
+    }));
+  </script>
+</AdminLayout>

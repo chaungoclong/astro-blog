@@ -1,0 +1,75 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/PostCard.astro';
+import { dbService } from '../lib/db';
+
+const query = Astro.url.searchParams.get('q') || '';
+const posts = query.trim() ? dbService.getPosts({ status: 'published', search: query, limit: 50 }) : [];
+---
+
+<BaseLayout title={query ? `Tìm kiếm: "${query}"` : 'Tìm kiếm bài viết'}>
+  
+  <div class="public-content-rail py-12 sm:py-16">
+    
+    <div class="mb-10 text-center sm:text-left border-b-2 border-zinc-950 pb-8">
+      <p class="font-mono text-xs font-bold text-[var(--brand-deep,#115e59)] uppercase tracking-widest mb-2">Tra cứu bài viết & kiến thức</p>
+      <h1 class="text-3xl sm:text-5xl font-bold text-zinc-950 tracking-tight" style="font-family: var(--font-display);">
+        Tìm kiếm bài viết
+      </h1>
+      <p class="text-sm text-zinc-600 mt-2">Tìm kiếm theo tiêu đề bài viết, nội dung tóm tắt, chuyên mục hoặc thẻ từ khóa.</p>
+    </div>
+
+    <!-- Search Box -->
+    <form method="GET" class="relative max-w-3xl mb-12">
+      <div class="flex flex-col sm:flex-row gap-3">
+        <div class="relative flex-1">
+          <input 
+            type="text" 
+            name="q" 
+            value={query}
+            placeholder="Nhập từ khóa (ví dụ: astro, sqlite, css, web)..." 
+            autofocus
+            class="w-full pl-11 pr-4 py-3 bg-white border-2 border-zinc-950 text-sm font-medium focus:outline-none focus:bg-amber-50/20 focus:shadow-[3px_3px_0_var(--retro-ink)] transition-all"
+          />
+          <svg class="w-4 h-4 text-zinc-400 absolute left-4 top-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </div>
+        <button 
+          type="submit" 
+          class="px-7 py-3 bg-zinc-950 hover:bg-zinc-800 text-white font-black text-xs uppercase tracking-wider border-2 border-zinc-950 shadow-[3px_3px_0_var(--retro-yellow)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--retro-yellow)] transition-all cursor-pointer"
+        >
+          Tìm kiếm
+        </button>
+      </div>
+    </form>
+
+    <!-- Results Section -->
+    {query.trim() !== '' && (
+      <div>
+        <div class="flex items-center justify-between pb-3 border-b-2 border-zinc-950 mb-8 font-mono text-xs text-zinc-600">
+          <span>Kết quả tìm kiếm cho: <strong class="text-zinc-950 font-sans font-bold">"{query}"</strong></span>
+          <span class="font-bold px-2 py-0.5 border border-zinc-950 bg-[var(--retro-yellow)] text-zinc-950">{posts.length} bài viết</span>
+        </div>
+
+        {posts.length === 0 ? (
+          <div class="border-2 border-zinc-950 bg-[var(--retro-paper)] p-12 text-center shadow-[4px_4px_0_var(--retro-ink)]">
+            <div class="w-12 h-12 border-2 border-zinc-950 bg-white mx-auto mb-4 flex items-center justify-center font-mono font-bold text-lg shadow-[2px_2px_0_var(--retro-ink)]">
+              ?
+            </div>
+            <p class="font-bold text-zinc-900 text-base" style="font-family: var(--font-display);">Không tìm thấy bài viết nào phù hợp với từ khóa.</p>
+            <p class="text-xs text-zinc-500 mt-1 font-mono">Hãy thử tìm với các từ ngắn hơn hoặc kiểm tra lỗi chính tả.</p>
+          </div>
+        ) : (
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {posts.map((post) => (
+              <PostCard post={post} />
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+
+  </div>
+
+</BaseLayout>
